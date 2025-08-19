@@ -1,0 +1,10 @@
+node_modules
+
+# Prevent package-lock (the project is using yarn)
+package-lock.json
+
+# Config
+src/config.ts
+
+# Build
+dist/*
