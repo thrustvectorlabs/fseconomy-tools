@@ -42,7 +42,8 @@ FSET is welcoming PRs. Techstack is TypeScript (strict), with React and Zustand 
 
 ## Upcoming features
 
-- Open for new requests, currently none planned.
+- Calculate and display net income when selecting a group of assignments
+- Make a standalone version which can be directly loaded from Tampermonkey from a remote source
 
 ## What FSEconomy Tools is _not_:
 
