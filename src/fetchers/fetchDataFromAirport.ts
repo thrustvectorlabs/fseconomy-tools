@@ -59,18 +59,6 @@ const getDistanceBonus = (tdCellText: string): number => {
   return Number.isNaN(numeric) ? 0 : numeric;
 };
 
-/** Extracts Dry/Wet price from a cell that contains e.g. "$1,234 / Dry" "$2,345 / Wet" buttons/links. Returns number|null */
-const extractRentalPrice = (tdCellText: string, priceType: 'Dry' | 'Wet'): number | null => {
-  // Split by "/" and find the chunk containing the keyword Dry/Wet
-  const parts = tdCellText.replace('[Hour]', '').trim().split('/');
-  const target = parts.find((chunk) => chunk.includes(priceType));
-  if (!target) return null;
-
-  // Example chunk: "$1,234  Dry" → strip the label and parse currency
-  const cleaned = target.replace(priceType, '').trim();
-  return parseCurrencyToNumber(cleaned);
-};
-
 /** Adds airport information to the store, if found */
 const addAirportToStore = (icao: string, dom: Document): void => {
   const airportNameElement = dom.querySelector('div.panel-body.airportInfo > div > div > div:nth-child(1)');
@@ -78,6 +66,17 @@ const addAirportToStore = (icao: string, dom: Document): void => {
   const [name = '', city = '', country = ''] = airportText.split(', ').map((s) => s.trim());
 
   useStore.getState().addAirport([{ icao, name, city, country }]);
+};
+
+const extractRentalPriceFromElement = (priceCell: Element, priceType: 'Dry' | 'Wet'): number | null => {
+  const priceLink = Array.from(priceCell.querySelectorAll('a.btn.btn-xs.btn-success')).find((link) =>
+    link.textContent?.includes(priceType),
+  );
+  if (!priceLink || !priceLink.textContent) {
+    return null;
+  }
+  const cleaned = priceLink.textContent.replace('[Hour]', '').replace(priceType, '').trim();
+  return parseCurrencyToNumber(cleaned);
 };
 
 /** Extract aircraft rows from DOM for a specific ICAO and modelId */
@@ -101,7 +100,10 @@ const getAircraftData = (dom: Document, icao: string, aircraftModelId: number): 
       const type = getOptionalCell(cells, 1)?.trim();
       const homeIcao = getOptionalCell(cells, 3)?.trim();
       const bonusCell = getOptionalCell(cells, 4) ?? '';
-      const priceCellText = getOptionalCell(cells, 5) ?? '';
+      const priceCell = aircraftRow.querySelectorAll('td')[5];
+
+      const priceDry = priceCell ? extractRentalPriceFromElement(priceCell, 'Dry') : null;
+      const priceWet = priceCell ? extractRentalPriceFromElement(priceCell, 'Wet') : null;
 
       if (!registration || !type || !homeIcao) {
         logWarn(`Skipping aircraft row due to missing essential data at ${icao}`, { registration, type, homeIcao });
@@ -126,24 +128,8 @@ const getAircraftData = (dom: Document, icao: string, aircraftModelId: number): 
       // Repair image is in the first (index 0) td.
       const needsRepair = Boolean(aircraftRow.querySelector('td img[src="img/repair.gif"]'));
 
-      // Guard the actual TD access even though we use the extracted cells for parsing
-      const tableCells = aircraftRow.querySelectorAll('td');
-      const dryWetPriceCell = tableCells[5];
-      if (!dryWetPriceCell) {
-        logWarn(`Expected rental price cell missing for ${registration} (${type}) at ${icao}`);
-        return;
-      }
-
-      const dryLinkText = Array.from(dryWetPriceCell.querySelectorAll('a.btn.btn-xs.btn-success'))
-        .find((link) => link.textContent?.includes('Dry'))
-        ?.textContent?.trim();
-
-      const wetLinkText = Array.from(dryWetPriceCell.querySelectorAll('a.btn.btn-xs.btn-success'))
-        .find((link) => link.textContent?.includes('Wet'))
-        ?.textContent?.trim();
-
-      const isRentableDry = !!dryLinkText;
-      const isRentableWet = !!wetLinkText;
+      const isRentableDry = !!priceDry;
+      const isRentableWet = !!priceWet;
 
       if (shouldBeRentable && !isRentableDry && !isRentableWet) {
         logInfo(`Ignoring ${registration} (${type}) at ${icao} as it is not rentable`);
@@ -159,8 +145,8 @@ const getAircraftData = (dom: Document, icao: string, aircraftModelId: number): 
         registration,
         type,
         homeIcao,
-        rentalPriceDry: extractRentalPrice(priceCellText, 'Dry'),
-        rentalPriceWet: extractRentalPrice(priceCellText, 'Wet'),
+        rentalPriceDry: priceDry || null,
+        rentalPriceWet: priceWet || null,
         distanceBonus,
         isRentableDry,
         isRentableWet,
