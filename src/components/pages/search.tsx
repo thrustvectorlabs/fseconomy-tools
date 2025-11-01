@@ -108,9 +108,18 @@ export const SearchPage = () => {
           Search aircraft
         </button>
         {config.developmentMode && (
-          <button type="button" className="fset-button search-button" onClick={() => clearAssignmentsAndAircraft()}>
-            Clear store
-          </button>
+          <>
+            <button type="button" className="fset-button search-button" onClick={() => clearAssignmentsAndAircraft()}>
+              Clear store
+            </button>
+            <button
+              type="button"
+              className="fset-button search-button"
+              onClick={() => console.log(useStore.getState())}
+            >
+              Log store
+            </button>
+          </>
         )}
       </form>
     </>
