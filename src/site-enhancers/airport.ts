@@ -1,100 +1,192 @@
-// @ts-nocheck - File disabled: This file is temporarily disabled due to ongoing changes in the FSEconomy airport page.
-import { nonExistingAirports } from '../data/airportMap';
+import { airportsWithoutIcao, nonExistingAirports } from '../data/airportMap';
+import { parseAirportCoordinates } from '../utils/coordinates';
+import { findFirstElementByText, getTextContent } from '../utils/dom';
 import { getCorrectedAirportForIcao } from '../utils/airport';
 
-const parseCoordinatesForGoogleMaps = (coordinatesString: string): string | null => {
-  const filteredCoordinates = coordinatesString.replace('Lat: ', '').replace(' Long: ', '');
+const ENHANCER_ID = 'fset-airport-enhancer';
 
-  // Regular expression to extract numbers and letters from the string
-  const regex = /([0-9.]+)([NS]),([0-9.]+)([EW])/i;
+const createBadge = (): HTMLSpanElement => {
+  const badge = document.createElement('span');
+  badge.className = 'fset-badge';
+  badge.textContent = 'FSE Tools';
+  badge.style.display = 'inline-block';
+  badge.style.background = 'linear-gradient(to bottom, #66bb6a, #43a047)';
+  badge.style.color = '#fff';
+  badge.style.fontSize = '14px';
+  badge.style.fontWeight = '700';
+  badge.style.padding = '4px 8px';
+  badge.style.borderRadius = '3px';
+  badge.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
+  return badge;
+};
 
-  // Use regex to match and extract latitude, longitude, and direction
-  const matches = filteredCoordinates.match(regex);
+const createPanel = (): HTMLDivElement => {
+  const panel = document.createElement('div');
+  panel.id = ENHANCER_ID;
+  panel.style.border = '1px solid #d8dee4';
+  panel.style.borderRadius = '6px';
+  panel.style.backgroundColor = '#f8fafc';
+  panel.style.padding = '12px 14px';
+  panel.style.margin = '16px 0';
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
+  panel.style.gap = '10px';
+  return panel;
+};
 
-  if (matches && matches.length === 5) {
-    const latitude = parseFloat(matches[1]) * (matches[2].toUpperCase() === 'N' ? 1 : -1);
-    const longitude = parseFloat(matches[3]) * (matches[4].toUpperCase() === 'E' ? 1 : -1);
+const createRow = (): HTMLDivElement => {
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.alignItems = 'center';
+  row.style.gap = '10px';
+  row.style.flexWrap = 'wrap';
+  return row;
+};
 
-    return `${latitude}%2C${longitude}`;
-  } else {
-    console.error('Invalid coordinate format');
-    return null;
+const createLinkRow = (label: string, href: string): HTMLDivElement => {
+  const row = createRow();
+  const link = document.createElement('a');
+  link.href = href;
+  link.target = '_blank';
+  link.rel = 'noreferrer';
+  link.textContent = label;
+  row.append(link);
+  return row;
+};
+
+const createButtonRow = (label: string, onClick: () => void): HTMLDivElement => {
+  const row = createRow();
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.style.cursor = 'pointer';
+  button.style.border = '1px solid #bec8d2';
+  button.style.backgroundColor = '#fff';
+  button.style.borderRadius = '4px';
+  button.style.padding = '6px 10px';
+  button.addEventListener('click', onClick);
+  row.append(button);
+  return row;
+};
+
+const createMessageRow = (message: string): HTMLDivElement => {
+  const row = createRow();
+  row.textContent = message;
+  return row;
+};
+
+const findAirportRoot = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('div.panel-body.airportInfo, div.airportInfo');
+
+const findCoordinatesElement = (root: ParentNode): HTMLElement | null =>
+  findFirstElementByText<HTMLElement>(
+    root,
+    'div, p, span, td, li',
+    (text) => /Lat:\s*[0-9.]+\s*[NS].*Long:\s*[0-9.]+\s*[EW]/i.test(text),
+  );
+
+const findElevationElement = (root: ParentNode): HTMLElement | null =>
+  findFirstElementByText<HTMLElement>(root, 'div, p, span, td, li', (text) => /^Elevation:/i.test(text));
+
+const findIcaoHeadingElement = (root: ParentNode, icao: string): HTMLElement | null =>
+  findFirstElementByText<HTMLElement>(root, 'h1, h2, h3, strong', (text) => text === icao);
+
+const buildAirportWarning = (icao: string): string | null => {
+  if (airportsWithoutIcao.includes(icao)) {
+    return `Warning: ICAO ${icao} has no real-world ICAO code. Use the airport name or coordinates in MSFS.`;
+  }
+
+  const correctedIcao = getCorrectedAirportForIcao(icao);
+  if (correctedIcao) {
+    return `Warning: ICAO ${icao} does not exist in MSFS. In MSFS it is known as ${correctedIcao}.`;
+  }
+
+  if (nonExistingAirports.includes(icao)) {
+    return `Warning: ICAO ${icao} does not exist in MSFS. Use the coordinates to find the airport manually.`;
+  }
+
+  return null;
+};
+
+const updateIcaoHeading = (element: HTMLElement | null, icao: string): void => {
+  if (!element) {
+    return;
+  }
+
+  const correctedIcao = getCorrectedAirportForIcao(icao);
+  if (correctedIcao) {
+    element.innerHTML = `<span style="text-decoration: line-through; color: #c00;">${icao}</span> <span style="padding: 0 3px;">→</span><span>${correctedIcao}</span>`;
+    return;
+  }
+
+  if (nonExistingAirports.includes(icao) || airportsWithoutIcao.includes(icao)) {
+    element.innerHTML = `<span style="text-decoration: line-through; color: #c00;">${icao}</span> <span title="Needs manual lookup">⚠</span>`;
   }
 };
 
 export const enhanceAirport = () => {
-  // @TODO Disabled temporarily, as FSE is renewing the airport page.
-  return;
-  const urlParams = new URLSearchParams(window.location.search);
-  const icao = urlParams.get('icao');
-
-  if (window.location.href.split('?')[0].indexOf('airport.jsp') !== -1) {
-    if (icao) {
-      // Assume Airport Detail page
-      const airportCoordsElement: HTMLElement | null = document.querySelector(
-        'div.airportInfo > table > tbody > tr:nth-child(1) > td:nth-child(1) > div:nth-child(3)',
-      );
-      const elevationElement: HTMLElement | null = document.querySelector(
-        'div.airportInfo > table > tbody > tr:nth-child(1) > td:nth-child(1) > div:nth-child(4)',
-      );
-      const icaoElement: HTMLElement | null = document.querySelector(
-        'div.airportInfo > table > tbody > tr:nth-child(1) > td:nth-child(1) > table:nth-child(1) > tbody > tr > td:nth-child(1) > h1',
-      );
-
-      if (!airportCoordsElement || !elevationElement || !icaoElement) {
-        console.warn('One or more required elements are missing on the page.');
-        return;
-      }
-
-      const icao = icaoElement.innerText.trim();
-      const coordsRaw = airportCoordsElement.innerText; // e.g. Lat: 47.7872N, Long: 6.365E
-      const coordsMsfs = coordsRaw.replace('Lat: ', '').replace(' Long: ', '');
-      const googleMapsUrl = `https://www.google.com/maps/@?api=1&map_action=map&center=${parseCoordinatesForGoogleMaps(
-        coordsRaw,
-      )}&zoom=14&basemap=satellite`;
-
-      // Check for validity of ICAO
-      let airportDoesNotExistInMsfsHTML = undefined;
-      if (nonExistingAirports.includes(icao)) {
-        icaoElement.innerHTML = `<span style="text-decoration: line-through; color: #c00;">${icao}</span>
-        <span style="
-          position: relative;
-          top: -2px;
-        ">⚠️</span>`;
-        airportDoesNotExistInMsfsHTML = `<div><div style="display: inline-block; width: 20px">⚠️</div> Warning: ICAO ${icao} does not exist in MSFS. Please use the coordinates from above to search the airport manually in MSFS.</div>`;
-      }
-
-      if (getCorrectedAirportForIcao(icao)) {
-        const correctIcao = getCorrectedAirportForIcao(icao);
-        icaoElement.innerHTML = `<span style="text-decoration: line-through; color: #c00;">${icao}</span>
-        <span style="
-          position: relative;
-          padding: 0 3px;
-        ">➡</span><span>${correctIcao}</span>`;
-        airportDoesNotExistInMsfsHTML = `<div><div style="display: inline-block; width: 20px">⚠️</div> Warning: ICAO ${icao} does not exist in MSFS. In MSFS it's known as ${correctIcao}.</div>`;
-      }
-
-      elevationElement.insertAdjacentHTML(
-        'afterend',
-        `
-    <div style="padding: 12px 0">
-      <div>
-        <a href="${googleMapsUrl}" target="_blank"><div style="display: inline-block; width: 20px">🌍</div> View on Google Maps</a>
-      </div>
-      <div onclick="navigator.clipboard.writeText('${coordsMsfs}'); alert('Copied ${coordsMsfs} to clipboard. You can use these to search for the airport in the World Map view of MSFS.');" style="cursor: pointer; display: inline-block;"><div style="display: inline-block; width: 20px">📄</div> Copy coordinates to clipboard for MSFS</div>
-      ${airportDoesNotExistInMsfsHTML ? airportDoesNotExistInMsfsHTML : ''}
-    </div>`,
-      );
-    }
-
-    if (!icao && document.querySelector('.goodssearchTable')) {
-      // Assume Search Results page
-      console.log('Search Results page');
-
-      const aircraftModelIdFromSearchForm = document.querySelector('[name="model"]');
-      const airportWithSelectedAircraft = Array.from<HTMLAnchorElement>(
-        document.querySelectorAll('.goodssearchTable a[href^="airport.jsp?icao"]'),
-      ).map((el) => el.innerText);
-    }
+  const url = new URL(window.location.href);
+  if (!url.pathname.endsWith('/airport.jsp')) {
+    return;
   }
+
+  const icao = url.searchParams.get('icao')?.trim().toUpperCase();
+  if (!icao) {
+    return;
+  }
+
+  if (document.getElementById(ENHANCER_ID)) {
+    return;
+  }
+
+  const airportRoot = findAirportRoot();
+  if (!airportRoot) {
+    console.warn('FSE Tools: airport info root not found.');
+    return;
+  }
+
+  const coordinatesElement = findCoordinatesElement(airportRoot);
+  if (!coordinatesElement) {
+    console.warn('FSE Tools: airport coordinates not found.');
+    return;
+  }
+
+  const coordinates = parseAirportCoordinates(getTextContent(coordinatesElement));
+  if (!coordinates) {
+    console.warn('FSE Tools: airport coordinates could not be parsed.');
+    return;
+  }
+
+  updateIcaoHeading(findIcaoHeadingElement(airportRoot, icao), icao);
+
+  const panel = createPanel();
+
+  const headerRow = createRow();
+  headerRow.append(createBadge());
+  const title = document.createElement('strong');
+  title.textContent = 'Airport helpers';
+  headerRow.append(title);
+  panel.append(headerRow);
+
+  panel.append(
+    createLinkRow(
+      'View airport on Google Maps',
+      `https://www.google.com/maps/@?api=1&map_action=map&center=${coordinates.googleMapsCenter}&zoom=14&basemap=satellite`,
+    ),
+  );
+
+  panel.append(
+    createButtonRow(`Copy coordinates for MSFS (${coordinates.msfs})`, async () => {
+      await navigator.clipboard.writeText(coordinates.msfs);
+      window.alert(`Copied ${coordinates.msfs} to the clipboard.`);
+    }),
+  );
+
+  const airportWarning = buildAirportWarning(icao);
+  if (airportWarning) {
+    panel.append(createMessageRow(airportWarning));
+  }
+
+  const anchor = findElevationElement(airportRoot) ?? coordinatesElement;
+  anchor.insertAdjacentElement('afterend', panel);
 };
