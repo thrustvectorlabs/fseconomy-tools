@@ -2,8 +2,10 @@ import { airportsWithoutIcao, nonExistingAirports } from '../data/airportMap';
 import { parseAirportCoordinates } from '../utils/coordinates';
 import { findFirstElementByText, getTextContent } from '../utils/dom';
 import { getCorrectedAirportForIcao } from '../utils/airport';
+import { SiteEnhancerDefinition } from './types';
 
 const ENHANCER_ID = 'fset-airport-enhancer';
+const AIRPORT_PATHNAME = '/airport.jsp';
 
 const createBadge = (): HTMLSpanElement => {
   const badge = document.createElement('span');
@@ -126,7 +128,7 @@ const updateIcaoHeading = (element: HTMLElement | null, icao: string): void => {
 
 export const enhanceAirport = () => {
   const url = new URL(window.location.href);
-  if (!url.pathname.endsWith('/airport.jsp')) {
+  if (!url.pathname.endsWith(AIRPORT_PATHNAME)) {
     return;
   }
 
@@ -189,4 +191,32 @@ export const enhanceAirport = () => {
 
   const anchor = findElevationElement(airportRoot) ?? coordinatesElement;
   anchor.insertAdjacentElement('afterend', panel);
+};
+
+export const airportEnhancer: SiteEnhancerDefinition = {
+  id: 'airport',
+  debugLabel: 'Airport',
+  matchesCurrentPage: () => new URL(window.location.href).pathname.endsWith(AIRPORT_PATHNAME),
+  enhance: enhanceAirport,
+  getDebugInfo: () => {
+    const url = new URL(window.location.href);
+    const icao = url.searchParams.get('icao')?.trim().toUpperCase() ?? null;
+    const airportRoot = findAirportRoot();
+    const coordinatesElement = airportRoot ? findCoordinatesElement(airportRoot) : null;
+    const elevationElement = airportRoot ? findElevationElement(airportRoot) : null;
+    const parsedCoordinates = coordinatesElement ? parseAirportCoordinates(getTextContent(coordinatesElement)) : null;
+
+    return {
+      enhancerPanelInjected: !!document.getElementById(ENHANCER_ID),
+      icao,
+      airportRootFound: !!airportRoot,
+      coordinatesElementFound: !!coordinatesElement,
+      coordinatesText: getTextContent(coordinatesElement),
+      parsedCoordinates,
+      elevationElementFound: !!elevationElement,
+      correctedIcao: icao ? getCorrectedAirportForIcao(icao) ?? null : null,
+      hasAirportWithoutIcaoWarning: icao ? airportsWithoutIcao.includes(icao) : false,
+      hasNonExistingAirportWarning: icao ? nonExistingAirports.includes(icao) : false,
+    };
+  },
 };

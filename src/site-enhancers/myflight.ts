@@ -1,30 +1,39 @@
 import { getAircraftTypeFromModelText } from '../utils/aircraftType';
+import { SiteEnhancerDefinition } from './types';
+
+const MY_FLIGHT_PATHNAME = 'myflight.jsp';
+
+const getMyFlightElements = () => ({
+  departureElement: document.querySelector<HTMLElement>('table.assignmentTable > tbody > tr > td:nth-child(4) > a'),
+  arrivalElement: document.querySelector<HTMLElement>('table.assignmentTable > tbody > tr > td:nth-child(5) > a'),
+  paxCountElement: document.querySelector<HTMLElement>(
+    'div.myflight-assignments.myflight-assignments--ready > div > div > div.col-md-8 > table > tbody > tr:nth-child(2) > td:nth-child(5)',
+  ),
+  cargoWeightElement: document.querySelector<HTMLElement>(
+    'div.myflight-assignments.myflight-assignments--ready > div > div > div.col-md-8 > table > tbody > tr:nth-child(2) > td:nth-child(7)',
+  ),
+  regElement: document.querySelector<HTMLElement>(
+    'div.myflight-aircraft > div > div:nth-child(1) > div.myflight-aircraft--model > div:nth-child(1) > p > a',
+  ),
+  aircraftModelTextElement: document.querySelector<HTMLElement>('div.myflight-aircraft--model > div:nth-child(1) > h3'),
+  statusElement: document.querySelector<HTMLElement>('.myflight-status'),
+});
 
 export const enhanceMyFlight = () => {
   // Modifiers
-  if (window.location.href.split('?')[0].indexOf('myflight.jsp') !== -1) {
+  if (window.location.href.split('?')[0].indexOf(MY_FLIGHT_PATHNAME) !== -1) {
     const hasFlight = !!document.querySelectorAll('.myflight-assignments--ready').length;
 
     if (hasFlight) {
-      const departureElement: HTMLElement | null = document.querySelector(
-        'table.assignmentTable > tbody > tr > td:nth-child(4) > a',
-      );
-      const arrivalElement: HTMLElement | null = document.querySelector(
-        'table.assignmentTable > tbody > tr > td:nth-child(5) > a',
-      );
-      const paxCountElement: HTMLElement | null = document.querySelector(
-        'div.myflight-assignments.myflight-assignments--ready > div > div > div.col-md-8 > table > tbody > tr:nth-child(2) > td:nth-child(5)',
-      );
-      const cargoWeightElement: HTMLElement | null = document.querySelector(
-        'div.myflight-assignments.myflight-assignments--ready > div > div > div.col-md-8 > table > tbody > tr:nth-child(2) > td:nth-child(7)',
-      );
-      const regElement: HTMLElement | null = document.querySelector(
-        'div.myflight-aircraft > div > div:nth-child(1) > div.myflight-aircraft--model > div:nth-child(1) > p > a',
-      );
-      const aircraftModelTextElement: HTMLElement | null = document.querySelector(
-        'div.myflight-aircraft--model > div:nth-child(1) > h3',
-      );
-      const statusElement: HTMLElement | null = document.querySelector('.myflight-status');
+      const {
+        departureElement,
+        arrivalElement,
+        paxCountElement,
+        cargoWeightElement,
+        regElement,
+        aircraftModelTextElement,
+        statusElement,
+      } = getMyFlightElements();
 
       if (
         !departureElement ||
@@ -72,4 +81,48 @@ export const enhanceMyFlight = () => {
       );
     }
   }
+};
+
+export const myFlightEnhancer: SiteEnhancerDefinition = {
+  id: 'myflight',
+  debugLabel: 'My Flight',
+  matchesCurrentPage: () => window.location.href.split('?')[0].indexOf(MY_FLIGHT_PATHNAME) !== -1,
+  enhance: enhanceMyFlight,
+  getDebugInfo: () => {
+    const hasFlight = !!document.querySelector('.myflight-assignments--ready');
+    const {
+      departureElement,
+      arrivalElement,
+      paxCountElement,
+      cargoWeightElement,
+      regElement,
+      aircraftModelTextElement,
+      statusElement,
+    } = getMyFlightElements();
+    const aircraftTypeIcao = aircraftModelTextElement
+      ? getAircraftTypeFromModelText(aircraftModelTextElement.innerText)
+      : null;
+
+    return {
+      hasFlight,
+      departure: departureElement?.innerText.trim() ?? null,
+      arrival: arrivalElement?.innerText.trim() ?? null,
+      pax: paxCountElement?.innerText.trim() ?? null,
+      cargoWeight: cargoWeightElement?.innerText.trim() ?? null,
+      registration: regElement?.innerText.trim() ?? null,
+      aircraftModelText: aircraftModelTextElement?.innerText.trim() ?? null,
+      aircraftTypeIcao,
+      statusText: statusElement?.innerText.trim() ?? null,
+      hasSimBriefLink: document.body.innerText.includes('SimBrief flightplan'),
+      requiredElementsPresent: {
+        departureElement: !!departureElement,
+        arrivalElement: !!arrivalElement,
+        paxCountElement: !!paxCountElement,
+        cargoWeightElement: !!cargoWeightElement,
+        regElement: !!regElement,
+        aircraftModelTextElement: !!aircraftModelTextElement,
+        statusElement: !!statusElement,
+      },
+    };
+  },
 };

@@ -5,10 +5,15 @@ import { SearchPage } from '../pages/search';
 import { Navigation } from '../navigation/navigation';
 import { AircraftPage } from '../pages/aircraft';
 import { ConsolidatedPage } from '../pages/consolidated';
+import { DebugPage } from '../pages/debug';
+import { getMatchingSiteEnhancer } from '../../site-enhancers/registry';
 
 export const App = () => {
   const store = useStore();
   const isOpen = useStore().isOpen;
+  const matchingSiteEnhancer = getMatchingSiteEnhancer();
+  const hasDebugPage = !!matchingSiteEnhancer;
+  const activePage = !hasDebugPage && store.pageToShow === 'debug' ? 'search' : store.pageToShow;
 
   if (!document.querySelector('.user-data')) {
     // User is not logged in.
@@ -34,13 +39,15 @@ export const App = () => {
               { label: 'Assignments', pageId: 'assignments' },
               { label: 'Aircraft', pageId: 'aircraft' },
               { label: 'Optimized for Passenger Payload', pageId: 'consolidated' },
+              ...(hasDebugPage ? [{ label: `Debug: ${matchingSiteEnhancer.debugLabel}`, pageId: 'debug' }] : []),
               // { label: 'Settings', pageId: 'settings' },
             ]}
           />
-          {store.pageToShow === 'search' && <SearchPage />}
-          {store.pageToShow === 'assignments' && <AssignmentsPage />}
-          {store.pageToShow === 'consolidated' && <ConsolidatedPage />}
-          {store.pageToShow === 'aircraft' && <AircraftPage />}
+          {activePage === 'search' && <SearchPage />}
+          {activePage === 'assignments' && <AssignmentsPage />}
+          {activePage === 'consolidated' && <ConsolidatedPage />}
+          {activePage === 'aircraft' && <AircraftPage />}
+          {activePage === 'debug' && <DebugPage />}
         </div>
       ) : (
         <div id="fset-tools-menu-caller">
