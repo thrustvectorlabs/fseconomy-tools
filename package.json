@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
+  "packageManager": "pnpm@10.23.0",
   "devDependencies": {
     "prettier": "3.6.2",
     "ts-loader": "9.5.2",
@@ -27,7 +28,7 @@
     "zustand": "^5.0.7"
   },
   "scripts": {
-    "start": "webpack --mode=development --watch",
+    "dev": "webpack --mode=development --watch",
     "build": "webpack --mode=production",
     "tsc": "tsc",
     "lint": "ts-prune; prettier -c src/",

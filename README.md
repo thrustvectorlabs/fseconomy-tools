@@ -7,7 +7,7 @@ FSEconomy Tools (FSET) - unofficial enhancements for FSEconomy (server.fseconomy
 - Set up project
 
 ```
-$ yarn
+$ pnpm install
 ```
 
 - Add Tampermonkey Script to Chrome from `tampermonkey-script` (see instructions below)
@@ -16,14 +16,14 @@ $ yarn
 # To use it in Tampermonkey/Greasemonkey:
 
 - Create a configuration file: copy the config.example.ts to config.ts (see instructions in config.example.ts as well)
-- Run the project locally to get a built version of FSEconomy Tools (run `yarn build`). The file will be located in `./dist`
+- Run the project locally to get a built version of FSEconomy Tools (run `pnpm build`). The file will be located in `./dist`
 - Create a new script in tampermonkey
 - Paste the contents of `tampermonkey-script/script.js` in the script
 - Point the path at the @require line to where the built version of FSEconomy Tools is (a pre-built version will be made available later)
 
 # To run locally:
 
-`$ yarn start`
+`$ pnpm dev`
 
 # About
 
