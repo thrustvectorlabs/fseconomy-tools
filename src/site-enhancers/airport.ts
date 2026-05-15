@@ -80,6 +80,12 @@ const createMessageRow = (message: string): HTMLDivElement => {
 const findAirportRoot = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('div.panel-body.airportInfo, div.airportInfo');
 
+const findAirportHeaderRoot = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('div.panel-heading.airportInfo');
+
+const findAirportIcaoHeadingElement = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('div.panel-heading.airportInfo h1');
+
 const findCoordinatesElement = (root: ParentNode): HTMLElement | null =>
   findFirstElementByText<HTMLElement>(
     root,
@@ -90,8 +96,58 @@ const findCoordinatesElement = (root: ParentNode): HTMLElement | null =>
 const findElevationElement = (root: ParentNode): HTMLElement | null =>
   findFirstElementByText<HTMLElement>(root, 'div, p, span, td, li', (text) => /^Elevation:/i.test(text));
 
-const findIcaoHeadingElement = (root: ParentNode, icao: string): HTMLElement | null =>
-  findFirstElementByText<HTMLElement>(root, 'h1, h2, h3, strong', (text) => text === icao);
+const getAirportIcaoFromDom = (): string | null => {
+  const headingText = getTextContent(findAirportIcaoHeadingElement());
+  if (/^[A-Z0-9]{3,4}$/i.test(headingText)) {
+    return headingText.toUpperCase();
+  }
+
+  const icaoInput = document.querySelector<HTMLInputElement>('input[name="icao"][value]');
+  const inputValue = icaoInput?.value?.trim().toUpperCase();
+  if (inputValue && /^[A-Z0-9]{3,4}$/i.test(inputValue)) {
+    return inputValue;
+  }
+
+  return null;
+};
+
+const getAirportIcao = (): { source: 'dom' | 'query'; value: string | null } => {
+  const domIcao = getAirportIcaoFromDom();
+  if (domIcao) {
+    return { source: 'dom', value: domIcao };
+  }
+
+  const urlIcao = new URL(window.location.href).searchParams.get('icao')?.trim().toUpperCase() ?? null;
+  return { source: 'query', value: urlIcao };
+};
+
+const getNearestAirports = () => {
+  const table = Array.from(document.querySelectorAll<HTMLTableElement>('table')).find((candidate) =>
+    getTextContent(candidate.querySelector('th')).includes('Close Airports'),
+  );
+
+  if (!table) {
+    return [];
+  }
+
+  return Array.from(table.querySelectorAll('tbody tr'))
+    .map((row) => {
+      const cells = row.querySelectorAll('td');
+      const airportLink = cells[0]?.querySelector<HTMLAnchorElement>('a[href*="airport.jsp?icao="]');
+      const distanceText = getTextContent(cells[1]);
+      const distanceMatch = distanceText.match(/([0-9.]+)\s*nm/i);
+
+      if (!airportLink) {
+        return null;
+      }
+
+      return {
+        icao: getTextContent(airportLink),
+        distanceNm: distanceMatch ? Number.parseFloat(distanceMatch[1]) : null,
+      };
+    })
+    .filter((airport): airport is NonNullable<typeof airport> => airport !== null);
+};
 
 const buildAirportWarning = (icao: string): string | null => {
   if (airportsWithoutIcao.includes(icao)) {
@@ -132,7 +188,7 @@ export const enhanceAirport = () => {
     return;
   }
 
-  const icao = url.searchParams.get('icao')?.trim().toUpperCase();
+  const { value: icao } = getAirportIcao();
   if (!icao) {
     return;
   }
@@ -159,7 +215,7 @@ export const enhanceAirport = () => {
     return;
   }
 
-  updateIcaoHeading(findIcaoHeadingElement(airportRoot, icao), icao);
+  updateIcaoHeading(findAirportIcaoHeadingElement(), icao);
 
   const panel = createPanel();
 
@@ -200,23 +256,30 @@ export const airportEnhancer: SiteEnhancerDefinition = {
   enhance: enhanceAirport,
   getDebugInfo: () => {
     const url = new URL(window.location.href);
-    const icao = url.searchParams.get('icao')?.trim().toUpperCase() ?? null;
+    const icao = getAirportIcao();
     const airportRoot = findAirportRoot();
+    const airportHeaderRoot = findAirportHeaderRoot();
     const coordinatesElement = airportRoot ? findCoordinatesElement(airportRoot) : null;
     const elevationElement = airportRoot ? findElevationElement(airportRoot) : null;
     const parsedCoordinates = coordinatesElement ? parseAirportCoordinates(getTextContent(coordinatesElement)) : null;
+    const nearestAirports = getNearestAirports();
 
     return {
       enhancerPanelInjected: !!document.getElementById(ENHANCER_ID),
-      icao,
+      icao: icao.value,
+      icaoSource: icao.source,
+      queryIcao: url.searchParams.get('icao')?.trim().toUpperCase() ?? null,
+      domIcao: getAirportIcaoFromDom(),
       airportRootFound: !!airportRoot,
+      airportHeaderRootFound: !!airportHeaderRoot,
       coordinatesElementFound: !!coordinatesElement,
       coordinatesText: getTextContent(coordinatesElement),
       parsedCoordinates,
       elevationElementFound: !!elevationElement,
-      correctedIcao: icao ? getCorrectedAirportForIcao(icao) ?? null : null,
-      hasAirportWithoutIcaoWarning: icao ? airportsWithoutIcao.includes(icao) : false,
-      hasNonExistingAirportWarning: icao ? nonExistingAirports.includes(icao) : false,
+      correctedIcao: icao.value ? getCorrectedAirportForIcao(icao.value) ?? null : null,
+      hasAirportWithoutIcaoWarning: icao.value ? airportsWithoutIcao.includes(icao.value) : false,
+      hasNonExistingAirportWarning: icao.value ? nonExistingAirports.includes(icao.value) : false,
+      nearestAirports,
     };
   },
 };
