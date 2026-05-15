@@ -7,6 +7,7 @@ type State = {
   aircraft: Aircraft[]; // Assuming aircraft is an array of some type
   airport?: Airport[];
   assignments: Assignment[];
+  isFullscreen: boolean;
   isOpen: boolean;
   myFlight: null | Assignment;
   pageToShow: string;
@@ -18,8 +19,10 @@ type State = {
   clearAssignmentsAndAircraft: () => void;
   getAircraftByRegistration: (registration: string) => Aircraft | undefined;
   getAirportByIcao: (icao: string) => Airport | undefined;
+  setIsFullscreen: (isFullscreen: boolean) => void;
   setPageToShow: (page: string) => void;
   setSearchFormParameters: (searchFormParameters: SearchFormParameters) => void;
+  toggleFullscreen: () => void;
   toggleCollapse: () => void;
   setIsOpen: (isOpen: boolean) => void;
 };
@@ -32,11 +35,21 @@ export const useStore = create<State>()(
         aircraft: [],
         airport: [],
         assignments: [],
+        isFullscreen: false,
         isOpen: false,
         myFlight: null,
         pageToShow: 'search',
         searchFormParameters: null,
-        toggleCollapse: () => set((state) => ({ isOpen: !state.isOpen })),
+        toggleCollapse: () =>
+          set((state) => ({
+            isFullscreen: state.isOpen ? false : state.isFullscreen,
+            isOpen: !state.isOpen,
+          })),
+        toggleFullscreen: () =>
+          set((state) => ({
+            isFullscreen: !state.isFullscreen,
+            isOpen: true,
+          })),
 
         addAircraft: (aircraft: Aircraft[]) =>
           set((state) => {
@@ -100,6 +113,8 @@ export const useStore = create<State>()(
 
         setPageToShow: (page: string) => set({ pageToShow: page }),
 
+        setIsFullscreen: (isFullscreen: boolean) => set({ isFullscreen }),
+
         setIsOpen: (isOpen: boolean) => set({ isOpen }),
 
         setSearchFormParameters: (searchFormParameters: SearchFormParameters) => set({ searchFormParameters }),
@@ -120,6 +135,7 @@ export const useStore = create<State>()(
         accountInformation: state.accountInformation,
         aircraft: state.aircraft,
         assignments: state.assignments,
+        isFullscreen: state.isFullscreen,
         isOpen: state.isOpen,
         pageToShow: state.pageToShow,
       }),

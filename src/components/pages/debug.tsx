@@ -13,9 +13,6 @@ export const DebugPage = () => {
 
   return (
     <section className="debug-page">
-      <h2>Page Debug</h2>
-      <p className="subtitle">Debug output for the active FSE page enhancer.</p>
-
       <div className="debug-page__summary">
         <div>
           <strong>Enhancer:</strong> {matchingEnhancer.debugLabel}

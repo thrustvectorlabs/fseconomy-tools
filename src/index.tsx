@@ -7,21 +7,43 @@ import { runSiteEnhancers } from './site-enhancers';
 
 function mountApp() {
   const containerId = 'fset-container';
+  const fontLinkId = 'fset-font-geist';
   const headContainer = document.querySelector('head');
   let container = document.getElementById(containerId);
 
-  if (headContainer) {
+  const updateLayoutAnchors = () => {
+    const nav = document.getElementById('nav');
+    const header = document.querySelector<HTMLElement>('.header.loggedin, .header');
+    const root = document.documentElement;
+
+    const navRect = nav?.getBoundingClientRect();
+    const headerRect = header?.getBoundingClientRect();
+
+    const launcherTop = navRect ? navRect.top + navRect.height / 2 : 144;
+    const launcherRight = navRect ? Math.max(window.innerWidth - navRect.right, 24) + 24 : 24;
+    const drawerTop = navRect ? navRect.bottom + 12 : (headerRect?.bottom ?? 120) + 12;
+
+    root.style.setProperty('--fset-launcher-top', `${launcherTop}px`);
+    root.style.setProperty('--fset-launcher-right', `${launcherRight}px`);
+    root.style.setProperty('--fset-drawer-top', `${drawerTop}px`);
+  };
+
+  if (headContainer && !document.getElementById(fontLinkId)) {
     headContainer.insertAdjacentHTML(
       'beforeend',
-      '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">',
+      `<link id="${fontLinkId}" rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">`,
     );
   }
 
   if (!container) {
     container = document.createElement('div');
     container.id = containerId;
-    document.body.insertBefore(container, document.body.firstChild);
+    document.body.appendChild(container);
   }
+
+  updateLayoutAnchors();
+  window.addEventListener('resize', updateLayoutAnchors);
+  window.addEventListener('scroll', updateLayoutAnchors, { passive: true });
 
   const root = createRoot(container);
   root.render(

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/store';
 import { Assignment } from '../../types/types';
-import { Breadcrumbs } from '../breadcrumbs/breadcrumbs';
 import { DataTable, Column } from '../data-table/data-table';
 
 interface AirportSummary {
@@ -145,12 +144,6 @@ export const ConsolidatedPage = () => {
 
   return (
     <>
-      <Breadcrumbs
-        crumbs={[
-          { pageName: 'Search', pageId: 'search' },
-          { pageName: 'Consolidated', pageId: 'consolidated' },
-        ]}
-      />
       <div className="assignments">
         <div className="consolidated-filters">
           <div className="consolidated-filters__group">

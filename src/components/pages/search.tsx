@@ -3,7 +3,6 @@ import { fetchAirportListWithAircraftType } from '../../fetchers/fetchAirportLis
 import { useStore } from '../../store/store';
 import { config } from '../../config';
 import { getAircraftNameById } from '../../utils/getAircraft';
-import { Breadcrumbs } from '../breadcrumbs/breadcrumbs';
 
 export const SearchPage = () => {
   const clearAssignmentsAndAircraft = useStore((state) => state.clearAssignmentsAndAircraft);
@@ -48,7 +47,6 @@ export const SearchPage = () => {
 
   return (
     <>
-      <Breadcrumbs />
       <form>
         {/* Aircraft */}
         <label htmlFor="fse_tools_model">Aircraft Type</label>

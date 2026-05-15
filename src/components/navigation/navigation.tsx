@@ -15,6 +15,8 @@ export const Navigation = ({ items }: NavigationProps) => {
   const setPageToShow = useStore((state) => state.setPageToShow);
   const assignments = useStore((state) => state.assignments);
   const aircraft = useStore((state) => state.aircraft);
+  const isFullscreen = useStore((state) => state.isFullscreen);
+  const toggleFullscreen = useStore((state) => state.toggleFullscreen);
 
   // Helper to get the count based on the pageId
   const getItemCount = (pageId: string): string | undefined => {
@@ -44,6 +46,9 @@ export const Navigation = ({ items }: NavigationProps) => {
         ))}
       </ul>
       <span className="navigation__badge-container">
+        <button type="button" className="navigation__meta-button" onClick={() => toggleFullscreen()}>
+          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+        </button>
         <OpenToggle />
       </span>
     </nav>

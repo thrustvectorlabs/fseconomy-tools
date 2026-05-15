@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useStore } from '../../store/store';
 import { OpenToggle } from '../open-toggle/open-toggle';
 import { AssignmentsPage } from '../pages/assignments';
@@ -7,30 +8,53 @@ import { AircraftPage } from '../pages/aircraft';
 import { ConsolidatedPage } from '../pages/consolidated';
 import { DebugPage } from '../pages/debug';
 import { getMatchingSiteEnhancer } from '../../site-enhancers/registry';
+import { TabHeader } from '../tab-header/tab-header';
 
 export const App = () => {
   const store = useStore();
-  const isOpen = useStore().isOpen;
+  const isFullscreen = useStore((state) => state.isFullscreen);
   const matchingSiteEnhancer = getMatchingSiteEnhancer();
   const hasDebugPage = !!matchingSiteEnhancer;
   const activePage = !hasDebugPage && store.pageToShow === 'debug' ? 'search' : store.pageToShow;
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  const pageMetaById = {
+    search: {
+      title: 'Search',
+      subtitle: 'Search nearby rentable aircraft and build assignment lists.',
+      content: <SearchPage />,
+    },
+    assignments: {
+      title: 'Assignments',
+      subtitle: 'Review the assignments collected from your last search.',
+      content: <AssignmentsPage />,
+    },
+    aircraft: {
+      title: 'Aircraft',
+      subtitle: 'Review the aircraft collected from your last search.',
+      content: <AircraftPage />,
+    },
+    consolidated: {
+      title: 'Optimized for Passenger Payload',
+      subtitle: 'Group assignments by airport and destination to maximize passenger revenue.',
+      content: <ConsolidatedPage />,
+    },
+    debug: {
+      title: 'Debug',
+      subtitle: 'Inspect page-specific enhancer state and extracted data.',
+      content: <DebugPage />,
+    },
+  } as const;
+
+  const activePageMeta = pageMetaById[activePage as keyof typeof pageMetaById] ?? pageMetaById.search;
 
   if (!document.querySelector('.user-data')) {
     // User is not logged in.
     return null;
   }
 
-  const wrapper = document.querySelector('#wrapper');
-  if (wrapper) {
-    if (isOpen) {
-      wrapper.classList.add('collapsed');
-    } else {
-      wrapper.classList.remove('collapsed');
-    }
-  }
-
   return (
-    <>
+    <div className={`fset-shell${store.isOpen ? ' fset-shell--open' : ''}${isFullscreen ? ' fset-shell--fullscreen' : ''}`}>
       {store.isOpen ? (
         <div id="fset-tools-menu">
           <Navigation
@@ -43,17 +67,16 @@ export const App = () => {
               // { label: 'Settings', pageId: 'settings' },
             ]}
           />
-          {activePage === 'search' && <SearchPage />}
-          {activePage === 'assignments' && <AssignmentsPage />}
-          {activePage === 'consolidated' && <ConsolidatedPage />}
-          {activePage === 'aircraft' && <AircraftPage />}
-          {activePage === 'debug' && <DebugPage />}
+          <TabHeader title={activePageMeta.title} subtitle={activePageMeta.subtitle} />
+          <div ref={contentRef} className="fset-tools-menu__content">
+            {activePageMeta.content}
+          </div>
         </div>
       ) : (
         <div id="fset-tools-menu-caller">
           <OpenToggle />
         </div>
       )}
-    </>
+    </div>
   );
 };

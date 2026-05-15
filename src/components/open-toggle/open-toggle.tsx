@@ -4,22 +4,21 @@ import { Badge } from '../badge/badge';
 export const OpenToggle = () => {
   const store = useStore();
 
-  const handleOnCollapseButtonClick = (ev: React.MouseEvent<HTMLAnchorElement>) => {
-    ev.preventDefault();
+  const handleOnCollapseButtonClick = () => {
     store.toggleCollapse();
   };
 
   return (
-    <div>
+    <div className="fset-open-toggle">
       {store.isOpen && (
-        <a href="#" onClick={handleOnCollapseButtonClick}>
+        <button type="button" className="fset-open-toggle__button" onClick={handleOnCollapseButtonClick}>
           <Badge label={'Close FSE Tools'} />
-        </a>
+        </button>
       )}
       {!store.isOpen && (
-        <a href="#" onClick={handleOnCollapseButtonClick}>
+        <button type="button" className="fset-open-toggle__button" onClick={handleOnCollapseButtonClick}>
           <Badge />
-        </a>
+        </button>
       )}
     </div>
   );
