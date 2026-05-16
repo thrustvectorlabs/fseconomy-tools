@@ -3,6 +3,7 @@ import { fetchAirportListWithAircraftType } from '../../fetchers/fetchAirportLis
 import { useStore } from '../../store/store';
 import { config } from '../../config';
 import { getAircraftNameById } from '../../utils/getAircraft';
+import { StoreStatistics } from '../store-statistics/store-statistics';
 
 export const SearchPage = () => {
   const clearAssignmentsAndAircraft = useStore((state) => state.clearAssignmentsAndAircraft);
@@ -46,80 +47,96 @@ export const SearchPage = () => {
   };
 
   return (
-    <>
-      <form>
-        {/* Aircraft */}
-        <label htmlFor="fse_tools_model">Aircraft Type</label>
-        <select id="fse_tools_model" name="fse_tools_model">
-          {config.aircraftToSelect.map((aircraftSelection) => (
-            <option key={aircraftSelection.modelId} value={aircraftSelection.modelId}>
-              {getAircraftNameById(aircraftSelection.modelId)}
-            </option>
-          ))}
-        </select>
+    <div className="fset-search-page">
+      <form className="fset-search-form">
+        <section className="fset-form-section">
+          <div className="fset-form-section__header">
+            <h2 className="fset-form-section__title">Aircraft and Departure</h2>
+            <p className="fset-form-section__subtitle">Choose the aircraft type and the airport used as the search origin.</p>
+          </div>
+          <div className="fset-form-grid">
+            <label htmlFor="fse_tools_model">Aircraft Type</label>
+            <select id="fse_tools_model" name="fse_tools_model">
+              {config.aircraftToSelect.map((aircraftSelection) => (
+                <option key={aircraftSelection.modelId} value={aircraftSelection.modelId}>
+                  {getAircraftNameById(aircraftSelection.modelId)}
+                </option>
+              ))}
+            </select>
 
-        {/* Airports */}
-        <label htmlFor="fse_tools_from_airport">Departure Airport</label>
-        <select id="fse_tools_from_airport" name="fse_tools_from_airport">
-          {config.airportsToSelect.map((airport) => (
-            <option key={airport} value={airport}>
-              {airport}
-            </option>
-          ))}
-        </select>
+            <label htmlFor="fse_tools_from_airport">Departure Airport</label>
+            <select id="fse_tools_from_airport" name="fse_tools_from_airport">
+              {config.airportsToSelect.map((airport) => (
+                <option key={airport} value={airport}>
+                  {airport}
+                </option>
+              ))}
+            </select>
 
-        {/* Override */}
-        <label htmlFor="fse_tools_from_airport_override">Custom</label>
-        <input
-          id="fse_tools_from_airport_override"
-          name="fse_tools_from_airport_override"
-          type="text"
-          placeholder="Airport code"
-        />
+            <label htmlFor="fse_tools_from_airport_override">Custom</label>
+            <input
+              id="fse_tools_from_airport_override"
+              name="fse_tools_from_airport_override"
+              type="text"
+              placeholder="Airport code"
+            />
+          </div>
+        </section>
 
-        {/* Distance */}
-        <label htmlFor="fse_tools_distance">Radius</label>
-        <select id="fse_tools_distance" name="fse_tools_distance">
-          {[10, 50, 100, 250, 500, 750, 1000, 1250, 1500].map((distance) => (
-            <option key={distance} value={distance}>
-              {distance} NM
-            </option>
-          ))}
-        </select>
+        <section className="fset-form-section">
+          <div className="fset-form-section__header">
+            <h2 className="fset-form-section__title">Search Limits</h2>
+            <p className="fset-form-section__subtitle">Control search radius and how much extra distance premium is acceptable.</p>
+          </div>
+          <div className="fset-form-grid">
+            <label htmlFor="fse_tools_distance">Radius</label>
+            <select id="fse_tools_distance" name="fse_tools_distance">
+              {[10, 50, 100, 250, 500, 750, 1000, 1250, 1500].map((distance) => (
+                <option key={distance} value={distance}>
+                  {distance} NM
+                </option>
+              ))}
+            </select>
 
-        {/* Distance Bonus */}
-        <label htmlFor="fse_tools_distance_bonus">Max. Distance Bonus</label>
-        <select id="fse_tools_distance_bonus" name="fse_tools_distance_bonus">
-          {[0, 25, 50, 75, 100, 200, 300, 400, 500, 1000, 10000].map((distanceBonus) => (
-            <option key={distanceBonus} value={distanceBonus}>
-              ${distanceBonus}
-            </option>
-          ))}
-        </select>
+            <label htmlFor="fse_tools_distance_bonus">Max. Distance Bonus</label>
+            <select id="fse_tools_distance_bonus" name="fse_tools_distance_bonus">
+              {[0, 25, 50, 75, 100, 200, 300, 400, 500, 1000, 10000].map((distanceBonus) => (
+                <option key={distanceBonus} value={distanceBonus}>
+                  ${distanceBonus}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
 
-        <button
-          name="fse_tools_search"
-          type="button"
-          className="fset-button search-button"
-          onClick={() => onClickGetAllAircraftWithForm()}
-        >
-          Search aircraft
-        </button>
-        {config.developmentMode && (
-          <>
-            <button type="button" className="fset-button search-button" onClick={() => clearAssignmentsAndAircraft()}>
-              Clear store
-            </button>
+        <section className="fset-form-section fset-form-section--compact">
+          <div className="fset-search-actions">
             <button
+              name="fse_tools_search"
               type="button"
               className="fset-button search-button"
-              onClick={() => console.log(useStore.getState())}
+              onClick={() => onClickGetAllAircraftWithForm()}
             >
-              Log store
+              Search aircraft
             </button>
-          </>
-        )}
+            {config.developmentMode && (
+              <>
+                <button type="button" className="fset-button search-button" onClick={() => clearAssignmentsAndAircraft()}>
+                  Clear store
+                </button>
+                <button
+                  type="button"
+                  className="fset-button search-button"
+                  onClick={() => console.log(useStore.getState())}
+                >
+                  Log store
+                </button>
+              </>
+            )}
+          </div>
+          <StoreStatistics />
+        </section>
       </form>
-    </>
+    </div>
   );
 };

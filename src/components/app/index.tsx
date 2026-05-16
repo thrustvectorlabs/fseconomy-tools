@@ -57,19 +57,23 @@ export const App = () => {
     <div className={`fset-shell${store.isOpen ? ' fset-shell--open' : ''}${isFullscreen ? ' fset-shell--fullscreen' : ''}`}>
       {store.isOpen ? (
         <div id="fset-tools-menu">
-          <Navigation
-            items={[
-              { label: 'Search', pageId: 'search' },
-              { label: 'Assignments', pageId: 'assignments' },
-              { label: 'Aircraft', pageId: 'aircraft' },
-              { label: 'Optimized for Passenger Payload', pageId: 'consolidated' },
-              ...(hasDebugPage ? [{ label: `Debug: ${matchingSiteEnhancer.debugLabel}`, pageId: 'debug' }] : []),
-              // { label: 'Settings', pageId: 'settings' },
-            ]}
-          />
-          <TabHeader title={activePageMeta.title} subtitle={activePageMeta.subtitle} />
-          <div ref={contentRef} className="fset-tools-menu__content">
-            {activePageMeta.content}
+          <div className="fset-tools-menu__frame">
+            <Navigation
+              items={[
+                { label: 'Search', pageId: 'search' },
+                { label: 'Assignments', pageId: 'assignments' },
+                { label: 'Aircraft', pageId: 'aircraft' },
+                { label: 'Optimized for Passenger Payload', pageId: 'consolidated' },
+                ...(hasDebugPage ? [{ label: `Debug: ${matchingSiteEnhancer.debugLabel}`, pageId: 'debug' }] : []),
+                // { label: 'Settings', pageId: 'settings' },
+              ]}
+            />
+            <div className="fset-tools-menu__main">
+              <TabHeader title={activePageMeta.title} subtitle={activePageMeta.subtitle} />
+              <div ref={contentRef} className="fset-tools-menu__content">
+                {activePageMeta.content}
+              </div>
+            </div>
           </div>
         </div>
       ) : (

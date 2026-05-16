@@ -40,7 +40,8 @@ export const Navigation = ({ items }: NavigationProps) => {
         {items.map(({ label, pageId }) => (
           <li key={pageId} className={`navigation__item${pageToShow === pageId ? ' navigation__item--active' : ''}`}>
             <button type="button" className="navigation__button" onClick={() => handleNavigationClick(pageId)}>
-              {label} {getItemCount(pageId)}
+              <span className="navigation__label">{label}</span>
+              {getItemCount(pageId) ? <span className="navigation__count">{getItemCount(pageId)}</span> : null}
             </button>
           </li>
         ))}
