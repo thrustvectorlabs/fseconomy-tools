@@ -1,6 +1,7 @@
 import { config } from '../config';
 import { extractTableCellValuesFromRow } from '../utils/extractTableCellValuesFromRow';
 import { generateFormData } from '../utils/generateFormData';
+import { getAircraftNameById } from '../utils/getAircraft';
 
 const extractAirports = (dom: Document) => {
   let rows = [];
@@ -33,6 +34,7 @@ const extractAirports = (dom: Document) => {
 export const fetchAirportListWithAircraftType = async (model: number, from: string, distance: number) => {
   const foundAircraft = config.aircraftToSelect.find((aircraft) => aircraft.modelId === model);
   const rentable = foundAircraft ? foundAircraft.rentable || false : false;
+  const modelName = getAircraftNameById(model) ?? '';
 
   return await fetch(`${config.baseUrl}/airport.jsp`, {
     method: 'POST',
@@ -49,12 +51,14 @@ export const fetchAirportListWithAircraftType = async (model: number, from: stri
       icao: '',
       registration: '',
       name: '',
+      modelName,
       model,
       distance,
-      from: from.toLowerCase(),
+      from: from.toUpperCase(),
       assignments: 'assignments',
       goodsMode: 'sell',
       commodity: '',
+      minAmount: 100,
       ...(rentable && { rentable: 'rentable' }),
       submit: 'true',
     }),

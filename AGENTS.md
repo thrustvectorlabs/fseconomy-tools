@@ -3,6 +3,7 @@
 ## Repo purpose
 
 - `fseconomy-tools` is a local TypeScript + React bundle that is loaded into FSEconomy through Tampermonkey.
+- “FSET” refers to FSE Tools, meaning this `fseconomy-tools` project.
 - The actual userscript metadata lives in [tampermonkey-script/script.js](/Users/sander/development/fseconomy-tools/tampermonkey-script/script.js).
 - The compiled payload is `dist/bundle.js`, built from [src/index.tsx](/Users/sander/development/fseconomy-tools/src/index.tsx).
 

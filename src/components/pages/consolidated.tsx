@@ -11,6 +11,9 @@ interface AirportSummary {
   assignments: Assignment[];
 }
 
+const isExclusiveAssignmentType = (assignmentType: Assignment['assignmentType']): boolean =>
+  assignmentType === 'A' || assignmentType === 'V';
+
 export const ConsolidatedPage = () => {
   const [desiredPassengers, setDesiredPassengers] = useState<number>(8);
   const [maxDistance, setMaxDistance] = useState<string>('');
@@ -33,24 +36,43 @@ export const ConsolidatedPage = () => {
             .filter((a) => a.destination === destination)
             .sort((a, b) => b.pay - a.pay);
 
+          const combinableAssignments = destAssignments.filter((assignment) => !isExclusiveAssignmentType(assignment.assignmentType));
+          const exclusiveAssignments = destAssignments.filter((assignment) => isExclusiveAssignmentType(assignment.assignmentType));
+
           let accumulatedPassengers = 0;
-          const selected: Assignment[] = [];
-          for (const candidate of destAssignments) {
+          const selectedCombinable: Assignment[] = [];
+          for (const candidate of combinableAssignments) {
             if (accumulatedPassengers >= desiredPassengerCapacity) break;
-            selected.push(candidate);
+            if (accumulatedPassengers + candidate.payload > desiredPassengerCapacity) continue;
+            selectedCombinable.push(candidate);
             accumulatedPassengers += candidate.payload;
           }
 
-          const groupPay = selected.reduce((sum, a) => sum + a.pay, 0);
+          const combinableSummary: AirportSummary = {
+            airport,
+            destination,
+            totalPay: selectedCombinable.reduce((sum, a) => sum + a.pay, 0),
+            passengerCount: accumulatedPassengers,
+            assignments: selectedCombinable,
+          };
 
-          if (groupPay > currentBest.totalPay) {
-            return {
-              airport,
-              destination,
-              totalPay: groupPay,
-              passengerCount: accumulatedPassengers,
-              assignments: selected,
-            };
+          const bestExclusiveAssignment = exclusiveAssignments
+            .filter((assignment) => assignment.payload <= desiredPassengerCapacity)
+            .sort((a, b) => b.pay - a.pay)[0];
+
+          const bestDestinationSummary =
+            bestExclusiveAssignment && bestExclusiveAssignment.pay > combinableSummary.totalPay
+              ? {
+                  airport,
+                  destination,
+                  totalPay: bestExclusiveAssignment.pay,
+                  passengerCount: bestExclusiveAssignment.payload,
+                  assignments: [bestExclusiveAssignment],
+                }
+              : combinableSummary;
+
+          if (bestDestinationSummary.totalPay > currentBest.totalPay) {
+            return bestDestinationSummary;
           }
           return currentBest;
         },
