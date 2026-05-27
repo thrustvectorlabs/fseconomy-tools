@@ -78,7 +78,7 @@ const createMessageRow = (message: string): HTMLDivElement => {
 };
 
 const findAirportRoot = (): HTMLElement | null =>
-  document.querySelector<HTMLElement>('div.panel-body.airportInfo, div.airportInfo');
+  document.querySelector<HTMLElement>('#mainContentDiv > div.row.clearfix');
 
 const findAirportHeaderRoot = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('div.panel-heading.airportInfo');
@@ -87,10 +87,8 @@ const findAirportIcaoHeadingElement = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('div.panel-heading.airportInfo h1');
 
 const findCoordinatesElement = (root: ParentNode): HTMLElement | null =>
-  findFirstElementByText<HTMLElement>(
-    root,
-    'div, p, span, td, li',
-    (text) => /Lat:\s*[0-9.]+\s*[NS].*Long:\s*[0-9.]+\s*[EW]/i.test(text),
+  findFirstElementByText<HTMLElement>(root, 'div', (text) =>
+    /Lat:\s*[0-9.]+\s*[NS].*Long:\s*[0-9.]+\s*[EW]/i.test(text),
   );
 
 const findElevationElement = (root: ParentNode): HTMLElement | null =>
@@ -276,7 +274,7 @@ export const airportEnhancer: SiteEnhancerDefinition = {
       coordinatesText: getTextContent(coordinatesElement),
       parsedCoordinates,
       elevationElementFound: !!elevationElement,
-      correctedIcao: icao.value ? getCorrectedAirportForIcao(icao.value) ?? null : null,
+      correctedIcao: icao.value ? (getCorrectedAirportForIcao(icao.value) ?? null) : null,
       hasAirportWithoutIcaoWarning: icao.value ? airportsWithoutIcao.includes(icao.value) : false,
       hasNonExistingAirportWarning: icao.value ? nonExistingAirports.includes(icao.value) : false,
       nearestAirports,
