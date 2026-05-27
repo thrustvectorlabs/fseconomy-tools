@@ -1,4 +1,5 @@
 import { airportsWithoutIcao, nonExistingAirports } from '../data/airportMap';
+import msfs2020Airports from '../data/msfs-2020-airports.json';
 import { parseAirportCoordinates } from '../utils/coordinates';
 import { findFirstElementByText, getTextContent } from '../utils/dom';
 import { getCorrectedAirportForIcao } from '../utils/airport';
@@ -6,6 +7,32 @@ import { SiteEnhancerDefinition } from './types';
 
 const ENHANCER_ID = 'fset-airport-enhancer';
 const AIRPORT_PATHNAME = '/airport.jsp';
+const MSFS_COORDINATE_PRECISION = 100;
+
+type Msfs2020Airport = {
+  ident: string;
+  laty: number;
+  lonx: number;
+  name: string;
+};
+
+type ValidationStatus =
+  | { ok: true }
+  | {
+      ok: false;
+      message: string;
+    };
+
+type MsfsValidationResult = {
+  airport: Msfs2020Airport | null;
+  renamedAirport: Msfs2020Airport | null;
+  icaoStatus: ValidationStatus;
+  coordinateStatus: ValidationStatus;
+};
+
+const msfsAirportByIdent = new Map(
+  (msfs2020Airports as Msfs2020Airport[]).map((airport) => [airport.ident.toUpperCase(), airport]),
+);
 
 const createBadge = (): HTMLSpanElement => {
   const badge = document.createElement('span');
@@ -45,6 +72,77 @@ const createRow = (): HTMLDivElement => {
   return row;
 };
 
+const createSectionsRow = (): HTMLDivElement => {
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.flexWrap = 'wrap';
+  row.style.gap = '12px';
+  return row;
+};
+
+const createSectionCard = (title: string, hasWarning: boolean): HTMLDivElement => {
+  const card = document.createElement('div');
+  card.style.flex = '1 1 280px';
+  card.style.minWidth = '280px';
+  card.style.border = hasWarning ? '1px solid #e6b8b7' : '1px solid #d8dee4';
+  card.style.borderRadius = '6px';
+  card.style.background = hasWarning ? 'linear-gradient(180deg, #fff5f5 0%, #fde9e8 100%)' : '#ffffff';
+  card.style.padding = '12px';
+  card.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.06)';
+
+  const heading = document.createElement('div');
+  heading.textContent = title;
+  heading.style.fontSize = '13px';
+  heading.style.fontWeight = '700';
+  heading.style.color = '#334155';
+  heading.style.marginBottom = '8px';
+  heading.style.textTransform = 'uppercase';
+  heading.style.letterSpacing = '0.04em';
+  card.append(heading);
+
+  return card;
+};
+
+const createStatusItem = (label: string, status: ValidationStatus): HTMLDivElement => {
+  const item = document.createElement('div');
+  item.style.display = 'flex';
+  item.style.alignItems = 'center';
+  item.style.justifyContent = 'space-between';
+  item.style.gap = '10px';
+  item.style.padding = '8px 10px';
+  item.style.borderRadius = '4px';
+  item.style.backgroundColor = 'rgba(248, 250, 252, 0.85)';
+
+  const labelElement = document.createElement('span');
+  labelElement.textContent = label;
+  labelElement.style.color = '#0f172a';
+  item.append(labelElement);
+
+  const icon = document.createElement('span');
+  icon.textContent = status.ok ? '✓' : '⚠';
+  icon.style.fontSize = '16px';
+  icon.style.fontWeight = '700';
+  icon.style.color = status.ok ? '#2e7d32' : '#c2410c';
+  if (!status.ok) {
+    icon.title = status.message;
+    icon.style.cursor = 'help';
+  }
+  item.append(icon);
+
+  return item;
+};
+
+const createInfoItem = (message: string): HTMLDivElement => {
+  const item = document.createElement('div');
+  item.textContent = message;
+  item.style.padding = '8px 10px';
+  item.style.borderRadius = '4px';
+  item.style.backgroundColor = 'rgba(220, 252, 231, 0.6)';
+  item.style.color = '#166534';
+  item.style.fontWeight = '600';
+  return item;
+};
+
 const createLinkRow = (label: string, href: string): HTMLDivElement => {
   const row = createRow();
   const link = document.createElement('a');
@@ -75,6 +173,100 @@ const createMessageRow = (message: string): HTMLDivElement => {
   const row = createRow();
   row.textContent = message;
   return row;
+};
+
+const truncateCoordinate = (value: number): number =>
+  Math.trunc(value * MSFS_COORDINATE_PRECISION) / MSFS_COORDINATE_PRECISION;
+
+const formatCoordinateForTooltip = (value: number): string => truncateCoordinate(value).toFixed(3);
+
+const findRenamedMsfsAirport = (coordinates: { latitude: number; longitude: number }): Msfs2020Airport | null => {
+  const fseLatitude = truncateCoordinate(coordinates.latitude);
+  const fseLongitude = truncateCoordinate(coordinates.longitude);
+  const matches = (msfs2020Airports as Msfs2020Airport[]).filter(
+    (airport) => truncateCoordinate(airport.laty) === fseLatitude && truncateCoordinate(airport.lonx) === fseLongitude,
+  );
+
+  return matches.length === 1 ? matches[0] : null;
+};
+
+const getMsfsValidation = (
+  icao: string,
+  coordinates: { latitude: number; longitude: number },
+): MsfsValidationResult => {
+  const airport = msfsAirportByIdent.get(icao.toUpperCase()) ?? null;
+  const icaoStatus: ValidationStatus = airport
+    ? { ok: true }
+    : { ok: false, message: `ICAO ${icao} was not found in the MSFS 2020 airport dataset.` };
+
+  if (!airport) {
+    const renamedAirport = findRenamedMsfsAirport(coordinates);
+    const coordinateStatus: ValidationStatus = renamedAirport
+      ? { ok: true }
+      : {
+          ok: false,
+          message: 'Position could not be matched to a unique MSFS 2020 airport.',
+        };
+
+    return {
+      airport: null,
+      renamedAirport,
+      icaoStatus,
+      coordinateStatus,
+    };
+  }
+
+  const fseLatitude = truncateCoordinate(coordinates.latitude);
+  const fseLongitude = truncateCoordinate(coordinates.longitude);
+  const msfsLatitude = truncateCoordinate(airport.laty);
+  const msfsLongitude = truncateCoordinate(airport.lonx);
+  const coordinatesMatch = fseLatitude === msfsLatitude && fseLongitude === msfsLongitude;
+
+  const coordinateStatus: ValidationStatus = coordinatesMatch
+    ? { ok: true }
+    : {
+        ok: false,
+        message: `FSE ${formatCoordinateForTooltip(coordinates.latitude)}, ${formatCoordinateForTooltip(coordinates.longitude)} vs MSFS ${formatCoordinateForTooltip(airport.laty)}, ${formatCoordinateForTooltip(airport.lonx)}.`,
+      };
+
+  return {
+    airport,
+    renamedAirport: null,
+    icaoStatus,
+    coordinateStatus,
+  };
+};
+
+const createMsfsValidationSection = (
+  icao: string,
+  coordinates: { latitude: number; longitude: number },
+): HTMLDivElement => {
+  const validation = getMsfsValidation(icao, coordinates);
+  const hasWarning = !validation.icaoStatus.ok || !validation.coordinateStatus.ok;
+  const section = createSectionCard('MSFS 2020 validation', hasWarning);
+
+  const items = document.createElement('div');
+  items.style.display = 'flex';
+  items.style.flexDirection = 'column';
+  items.style.gap = '8px';
+  items.append(
+    createStatusItem(
+      validation.icaoStatus.ok ? `${icao} exists in MSFS 2020` : `${icao} does not exist in MSFS 2020`,
+      validation.icaoStatus,
+    ),
+  );
+  items.append(
+    createStatusItem(
+      validation.coordinateStatus.ok ? 'Position matches to 2 decimals' : 'Position does not match MSFS 2020',
+      validation.coordinateStatus,
+    ),
+  );
+  if (validation.renamedAirport) {
+    items.append(createInfoItem(`MSFS 2020 uses ICAO ${validation.renamedAirport.ident} for this airport`));
+  }
+  section.append(items);
+
+  return section;
 };
 
 const findAirportRoot = (): HTMLElement | null =>
@@ -150,23 +342,6 @@ const getNearestAirports = () => {
     .filter((airport): airport is NonNullable<typeof airport> => airport !== null);
 };
 
-const buildAirportWarning = (icao: string): string | null => {
-  if (airportsWithoutIcao.includes(icao)) {
-    return `Warning: ICAO ${icao} has no real-world ICAO code. Use the airport name or coordinates in MSFS.`;
-  }
-
-  const correctedIcao = getCorrectedAirportForIcao(icao);
-  if (correctedIcao) {
-    return `Warning: ICAO ${icao} does not exist in MSFS. In MSFS it is known as ${correctedIcao}.`;
-  }
-
-  if (nonExistingAirports.includes(icao)) {
-    return `Warning: ICAO ${icao} does not exist in MSFS. Use the coordinates to find the airport manually.`;
-  }
-
-  return null;
-};
-
 const updateIcaoHeading = (element: HTMLElement | null, icao: string): void => {
   if (!element) {
     return;
@@ -233,6 +408,10 @@ export const enhanceAirport = () => {
   headerRow.append(title);
   panel.append(headerRow);
 
+  const sectionsRow = createSectionsRow();
+  sectionsRow.append(createMsfsValidationSection(icao, coordinates));
+  panel.append(sectionsRow);
+
   panel.append(
     createLinkRow(
       'View airport on Google Maps',
@@ -246,11 +425,6 @@ export const enhanceAirport = () => {
       window.alert(`Copied ${coordinates.msfs} to the clipboard.`);
     }),
   );
-
-  const airportWarning = buildAirportWarning(icao);
-  if (airportWarning) {
-    panel.append(createMessageRow(airportWarning));
-  }
 
   airportHelpersAnchor.insertAdjacentElement('afterend', panel);
 };
@@ -269,6 +443,7 @@ export const airportEnhancer: SiteEnhancerDefinition = {
     const coordinatesElement = airportRoot ? findCoordinatesElement(airportRoot) : null;
     const elevationElement = airportRoot ? findElevationElement(airportRoot) : null;
     const parsedCoordinates = coordinatesElement ? parseAirportCoordinates(getTextContent(coordinatesElement)) : null;
+    const msfsValidation = icao.value && parsedCoordinates ? getMsfsValidation(icao.value, parsedCoordinates) : null;
     const nearestAirports = getNearestAirports();
 
     return {
@@ -284,6 +459,10 @@ export const airportEnhancer: SiteEnhancerDefinition = {
       coordinatesText: getTextContent(coordinatesElement),
       parsedCoordinates,
       elevationElementFound: !!elevationElement,
+      msfsAirportFound: !!msfsValidation?.airport,
+      msfsIcaoMatches: msfsValidation?.icaoStatus.ok ?? false,
+      msfsCoordinatesMatch: msfsValidation?.coordinateStatus.ok ?? false,
+      msfsRenamedIcao: msfsValidation?.renamedAirport?.ident ?? null,
       correctedIcao: icao.value ? (getCorrectedAirportForIcao(icao.value) ?? null) : null,
       hasAirportWithoutIcaoWarning: icao.value ? airportsWithoutIcao.includes(icao.value) : false,
       hasNonExistingAirportWarning: icao.value ? nonExistingAirports.includes(icao.value) : false,
