@@ -80,6 +80,9 @@ const createMessageRow = (message: string): HTMLDivElement => {
 const findAirportRoot = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('#mainContentDiv > div.row.clearfix');
 
+const findAirportHelpersAnchor = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('#mainContentDiv > div.row.clearfix > div.col-md-5');
+
 const findAirportHeaderRoot = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('div.panel-heading.airportInfo');
 
@@ -201,6 +204,12 @@ export const enhanceAirport = () => {
     return;
   }
 
+  const airportHelpersAnchor = findAirportHelpersAnchor();
+  if (!airportHelpersAnchor) {
+    console.warn('FSE Tools: airport helpers anchor not found.');
+    return;
+  }
+
   const coordinatesElement = findCoordinatesElement(airportRoot);
   if (!coordinatesElement) {
     console.warn('FSE Tools: airport coordinates not found.');
@@ -243,8 +252,7 @@ export const enhanceAirport = () => {
     panel.append(createMessageRow(airportWarning));
   }
 
-  const anchor = findElevationElement(airportRoot) ?? coordinatesElement;
-  anchor.insertAdjacentElement('afterend', panel);
+  airportHelpersAnchor.insertAdjacentElement('afterend', panel);
 };
 
 export const airportEnhancer: SiteEnhancerDefinition = {
@@ -256,6 +264,7 @@ export const airportEnhancer: SiteEnhancerDefinition = {
     const url = new URL(window.location.href);
     const icao = getAirportIcao();
     const airportRoot = findAirportRoot();
+    const airportHelpersAnchor = findAirportHelpersAnchor();
     const airportHeaderRoot = findAirportHeaderRoot();
     const coordinatesElement = airportRoot ? findCoordinatesElement(airportRoot) : null;
     const elevationElement = airportRoot ? findElevationElement(airportRoot) : null;
@@ -269,6 +278,7 @@ export const airportEnhancer: SiteEnhancerDefinition = {
       queryIcao: url.searchParams.get('icao')?.trim().toUpperCase() ?? null,
       domIcao: getAirportIcaoFromDom(),
       airportRootFound: !!airportRoot,
+      airportHelpersAnchorFound: !!airportHelpersAnchor,
       airportHeaderRootFound: !!airportHeaderRoot,
       coordinatesElementFound: !!coordinatesElement,
       coordinatesText: getTextContent(coordinatesElement),
