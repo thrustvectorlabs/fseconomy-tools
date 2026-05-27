@@ -1,4 +1,9 @@
 const path = require('path');
+const webpack = require('webpack');
+
+const buildTime = new Date().toLocaleTimeString('en-GB', {
+  hour12: false,
+});
 
 module.exports = {
   entry: './src/index.tsx',
@@ -31,4 +36,9 @@ module.exports = {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist'),
   },
+  plugins: [
+    new webpack.DefinePlugin({
+      __FSET_BUILD_TIME__: JSON.stringify(buildTime),
+    }),
+  ],
 };
