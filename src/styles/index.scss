@@ -46,16 +46,17 @@ $data-table-filter-height: 54px;
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    min-height: 38px;
-    padding: 7px 12px;
-    border: 1px solid #89a3ba;
-    background: linear-gradient(135deg, #163f67 0%, #20588f 70%, #2b6da9 100%);
+    min-height: 26px;
+    padding: 5px 12px;
+    // border: 1px solid #89a3ba;
+    // background: linear-gradient(135deg, #163f67 0%, #20588f 70%, #2b6da9 100%);
+    background: linear-gradient(rgb(102, 187, 106), rgb(67, 160, 71));
     color: #fff;
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    box-shadow: 8px 8px 0 rgba(16, 42, 67, 0.18);
+    // box-shadow: 8px 8px 0 rgba(16, 42, 67, 0.18);
 
     &.small {
       font-size: 10px;

@@ -1,7 +1,9 @@
 import { airportsWithoutIcao, nonExistingAirports } from '../data/airportMap';
 import msfs2020Airports from '../data/msfs-2020-airports.json';
+import { extractPayload } from '../utils/assignments';
 import { parseAirportCoordinates } from '../utils/coordinates';
 import { findFirstElementByText, getTextContent } from '../utils/dom';
+import { extractTableCellValuesFromRow } from '../utils/extractTableCellValuesFromRow';
 import { getCorrectedAirportForIcao } from '../utils/airport';
 import { SiteEnhancerDefinition } from './types';
 
@@ -30,9 +32,106 @@ type MsfsValidationResult = {
   coordinateStatus: ValidationStatus;
 };
 
+type AirportAssignment = {
+  assignmentId: number;
+  assignmentType: 'T' | 'A' | 'V';
+  destination: string;
+  distance: number;
+  pay: number;
+  payload: number;
+  payloadString: string;
+  payloadUnit: 'pax' | 'kg';
+  aircraftRegistration?: string;
+  isPassengerTerminalAssignment: boolean;
+};
+
+type AirportAircraft = {
+  registration: string;
+  type: string;
+  homeIcao: string;
+  distanceBonus: number;
+  rentalPriceDry: number | null;
+  rentalPriceWet: number | null;
+  isRentableDry: boolean;
+  isRentableWet: boolean;
+  needsRepair: boolean;
+};
+
+type DestinationSummary = {
+  destination: string;
+  assignmentCount: number;
+  totalPay: number;
+  totalPayload: number;
+  payloadUnit: 'pax' | 'kg' | 'mixed';
+  bestPayPerNm: number;
+  distanceNm: number;
+  passengerTerminalCount: number;
+  aircraftSpecificCount: number;
+  selectedAssignments: AirportAssignment[];
+};
+
+type DispatchFilters = {
+  selectedAssignmentTypes: Array<'T' | 'V' | 'A'>;
+  maxPassengerPayload: number | null;
+  rankingMode: 'totalPay' | 'payPerNm';
+};
+
 const msfsAirportByIdent = new Map(
   (msfs2020Airports as Msfs2020Airport[]).map((airport) => [airport.ident.toUpperCase(), airport]),
 );
+
+const cleanCurrency = (value: string): string => value.replace(/[$,]/g, '').trim();
+
+const parseCurrencyToNumber = (value: string | null | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(cleanCurrency(value), 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const toInteger = (value: string | null | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const getOptionalCell = (cells: string[], index: number): string | null =>
+  index >= 0 && index < cells.length ? cells[index] : null;
+
+const normalizeAssignmentType = (value: string | null | undefined): 'T' | 'A' | 'V' | null => {
+  const normalized = value?.trim().toUpperCase();
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized.startsWith('ALL-IN') || normalized.startsWith('A')) return 'A';
+  if (normalized.startsWith('VIP') || normalized.startsWith('V')) return 'V';
+  if (normalized.startsWith('TRIP') || normalized.startsWith('T')) return 'T';
+  return null;
+};
+
+const inferPayloadUnit = (assignmentType: 'T' | 'A' | 'V', description: string): 'pax' | 'kg' => {
+  if (assignmentType === 'V' || assignmentType === 'A') {
+    return 'pax';
+  }
+
+  return description.includes('Cargo') ? 'kg' : 'pax';
+};
+
+const getDistanceBonus = (cellText: string): number => {
+  const match = cellText.match(/\$(\d[\d,]*)/);
+  if (!match) {
+    return 0;
+  }
+
+  const numeric = Number(match[1].replace(/,/g, ''));
+  return Number.isNaN(numeric) ? 0 : numeric;
+};
 
 const createBadge = (): HTMLSpanElement => {
   const badge = document.createElement('span');
@@ -80,10 +179,14 @@ const createSectionsRow = (): HTMLDivElement => {
   return row;
 };
 
-const createSectionCard = (title: string, hasWarning: boolean): HTMLDivElement => {
+const createSectionCard = (
+  title: string,
+  hasWarning: boolean,
+  layout: { flex?: string; minWidth?: string } = {},
+): HTMLDivElement => {
   const card = document.createElement('div');
-  card.style.flex = '1 1 280px';
-  card.style.minWidth = '280px';
+  card.style.flex = layout.flex ?? '1 1 280px';
+  card.style.minWidth = layout.minWidth ?? '280px';
   card.style.border = hasWarning ? '1px solid #e6b8b7' : '1px solid #d8dee4';
   card.style.borderRadius = '6px';
   card.style.background = hasWarning ? 'linear-gradient(180deg, #fff5f5 0%, #fde9e8 100%)' : '#ffffff';
@@ -141,6 +244,195 @@ const createInfoItem = (message: string): HTMLDivElement => {
   item.style.color = '#166534';
   item.style.fontWeight = '600';
   return item;
+};
+
+const createWarningItem = (message: string): HTMLDivElement => {
+  const item = document.createElement('div');
+  item.textContent = message;
+  item.style.padding = '8px 10px';
+  item.style.borderRadius = '4px';
+  item.style.backgroundColor = 'rgba(255, 237, 213, 0.8)';
+  item.style.color = '#9a3412';
+  item.style.fontWeight = '600';
+  return item;
+};
+
+const createEmptyState = (message: string): HTMLDivElement => {
+  const item = document.createElement('div');
+  item.textContent = message;
+  item.style.padding = '8px 10px';
+  item.style.borderRadius = '4px';
+  item.style.backgroundColor = '#f8fafc';
+  item.style.color = '#475569';
+  return item;
+};
+
+const createMetricGrid = (): HTMLDivElement => {
+  const grid = document.createElement('div');
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(120px, 1fr))';
+  grid.style.gap = '8px';
+  return grid;
+};
+
+const createMetricCard = (label: string, value: string): HTMLDivElement => {
+  const card = document.createElement('div');
+  card.style.padding = '10px';
+  card.style.border = '1px solid #e2e8f0';
+  card.style.borderRadius = '6px';
+  card.style.backgroundColor = '#fff';
+
+  const labelElement = document.createElement('div');
+  labelElement.textContent = label;
+  labelElement.style.fontSize = '12px';
+  labelElement.style.textTransform = 'uppercase';
+  labelElement.style.letterSpacing = '0.04em';
+  labelElement.style.color = '#64748b';
+  labelElement.style.marginBottom = '4px';
+  card.append(labelElement);
+
+  const valueElement = document.createElement('div');
+  valueElement.textContent = value;
+  valueElement.style.fontSize = '20px';
+  valueElement.style.fontWeight = '700';
+  valueElement.style.color = '#0f172a';
+  card.append(valueElement);
+
+  return card;
+};
+
+const createFormRow = (): HTMLDivElement => {
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.flexWrap = 'wrap';
+  row.style.gap = '10px';
+  row.style.marginTop = '10px';
+  return row;
+};
+
+const createFieldGroup = (label: string, control: HTMLElement): HTMLLabelElement => {
+  const group = document.createElement('label');
+  group.style.display = 'flex';
+  group.style.flexDirection = 'column';
+  group.style.gap = '4px';
+  group.style.fontSize = '12px';
+  group.style.fontWeight = '700';
+  group.style.color = '#334155';
+  group.textContent = label;
+  group.append(control);
+  return group;
+};
+
+const createSelectControl = (): HTMLSelectElement => {
+  const select = document.createElement('select');
+  select.style.minWidth = '120px';
+  select.style.padding = '6px 8px';
+  select.style.border = '1px solid #cbd5e1';
+  select.style.borderRadius = '4px';
+  select.style.backgroundColor = '#fff';
+  select.style.color = '#0f172a';
+  return select;
+};
+
+const createNumberInputControl = (): HTMLInputElement => {
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = '1';
+  input.step = '1';
+  input.placeholder = 'Any';
+  input.style.width = '120px';
+  input.style.padding = '6px 8px';
+  input.style.border = '1px solid #cbd5e1';
+  input.style.borderRadius = '4px';
+  input.style.backgroundColor = '#fff';
+  input.style.color = '#0f172a';
+  return input;
+};
+
+const createCheckboxGroup = (): HTMLDivElement => {
+  const group = document.createElement('div');
+  group.style.display = 'flex';
+  group.style.flexWrap = 'wrap';
+  group.style.gap = '8px';
+  return group;
+};
+
+const createCheckboxChip = (label: string, checked: boolean): { wrapper: HTMLLabelElement; input: HTMLInputElement } => {
+  const wrapper = document.createElement('label');
+  wrapper.style.display = 'inline-flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.gap = '6px';
+  wrapper.style.padding = '6px 8px';
+  wrapper.style.border = '1px solid #cbd5e1';
+  wrapper.style.borderRadius = '999px';
+  wrapper.style.backgroundColor = '#fff';
+  wrapper.style.color = '#0f172a';
+  wrapper.style.fontWeight = '600';
+  wrapper.style.cursor = 'pointer';
+
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = checked;
+  wrapper.append(input, document.createTextNode(label));
+
+  return { wrapper, input };
+};
+
+const createList = (): HTMLDivElement => {
+  const list = document.createElement('div');
+  list.style.display = 'flex';
+  list.style.flexDirection = 'column';
+  list.style.gap = '8px';
+  return list;
+};
+
+const createSummaryRow = (title: string, details: string, href?: string): HTMLDivElement => {
+  const row = document.createElement('div');
+  row.style.padding = '10px';
+  row.style.border = '1px solid #e2e8f0';
+  row.style.borderRadius = '6px';
+  row.style.backgroundColor = '#fff';
+
+  const titleElement = href ? document.createElement('a') : document.createElement('div');
+  if (href && titleElement instanceof HTMLAnchorElement) {
+    titleElement.href = href;
+    titleElement.textContent = title;
+  } else {
+    titleElement.textContent = title;
+  }
+  titleElement.style.display = 'block';
+  titleElement.style.fontWeight = '700';
+  titleElement.style.color = '#0f172a';
+  row.append(titleElement);
+
+  const detailsElement = document.createElement('div');
+  detailsElement.textContent = details;
+  detailsElement.style.marginTop = '4px';
+  detailsElement.style.color = '#475569';
+  detailsElement.style.fontSize = '13px';
+  row.append(detailsElement);
+
+  return row;
+};
+
+const formatCurrency = (value: number): string =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+
+const formatSelectedPayload = (assignments: AirportAssignment[]): string => {
+  const passengerPayload = assignments
+    .filter((assignment) => assignment.payloadUnit === 'pax')
+    .reduce((sum, assignment) => sum + assignment.payload, 0);
+  const cargoPayload = assignments
+    .filter((assignment) => assignment.payloadUnit === 'kg')
+    .reduce((sum, assignment) => sum + assignment.payload, 0);
+
+  if (passengerPayload > 0 && cargoPayload > 0) {
+    return `${passengerPayload} pax + ${cargoPayload} kg`;
+  }
+  if (passengerPayload > 0) {
+    return `${passengerPayload} pax`;
+  }
+  return `${cargoPayload} kg`;
 };
 
 const createLinkRow = (label: string, href: string): HTMLDivElement => {
@@ -243,7 +535,7 @@ const createMsfsValidationSection = (
 ): HTMLDivElement => {
   const validation = getMsfsValidation(icao, coordinates);
   const hasWarning = !validation.icaoStatus.ok || !validation.coordinateStatus.ok;
-  const section = createSectionCard('MSFS 2020 validation', hasWarning);
+  const section = createSectionCard('MSFS 2020 validation', hasWarning, { flex: '1 1 32%', minWidth: '260px' });
 
   const items = document.createElement('div');
   items.style.display = 'flex';
@@ -342,6 +634,429 @@ const getNearestAirports = () => {
     .filter((airport): airport is NonNullable<typeof airport> => airport !== null);
 };
 
+const getAirportAssignments = (): AirportAssignment[] => {
+  const assignmentRows = Array.from(document.querySelectorAll<HTMLElement>('#jobTable > tbody > tr'));
+
+  return assignmentRows
+    .map((row): AirportAssignment | null => {
+      const cells = extractTableCellValuesFromRow(row);
+      const payText = getOptionalCell(cells, 1);
+      const destination = getOptionalCell(cells, 3)?.trim();
+      const distanceText = getOptionalCell(cells, 4);
+      const payloadText = getOptionalCell(cells, 6)?.trim() ?? '';
+      const typeCell = getOptionalCell(cells, 7) ?? '';
+      const aircraftText = getOptionalCell(cells, 8)?.trim();
+      const checkbox = row.querySelector<HTMLInputElement>('input[type="checkbox"]');
+
+      const assignmentType = normalizeAssignmentType(typeCell);
+      const pay = parseCurrencyToNumber(payText);
+      const distance = toInteger(distanceText);
+
+      if (!checkbox?.value || !assignmentType || !destination || pay == null || distance == null) {
+        return null;
+      }
+
+      return {
+        assignmentId: Number.parseInt(checkbox.value, 10),
+        assignmentType,
+        destination,
+        distance,
+        pay,
+        payload: extractPayload(payloadText, assignmentType),
+        payloadString: payloadText,
+        payloadUnit: inferPayloadUnit(assignmentType, payloadText),
+        aircraftRegistration: aircraftText && aircraftText !== '[N/A]' ? aircraftText : undefined,
+        isPassengerTerminalAssignment: row.querySelectorAll('td')[6]?.querySelector('font[color="Green"]') != null,
+      };
+    })
+    .filter((assignment): assignment is AirportAssignment => assignment !== null);
+};
+
+const extractRentalPriceFromElement = (priceCell: Element, priceType: 'Dry' | 'Wet'): number | null => {
+  const priceLink = Array.from(priceCell.querySelectorAll('a.btn.btn-xs.btn-success')).find((link) =>
+    link.textContent?.includes(priceType),
+  );
+  if (!priceLink || !priceLink.textContent) {
+    return null;
+  }
+
+  const cleaned = priceLink.textContent.replace('[Hour]', '').replace(priceType, '').trim();
+  return parseCurrencyToNumber(cleaned);
+};
+
+const getAirportAircraft = (): AirportAircraft[] => {
+  const aircraftRows = Array.from(document.querySelectorAll<HTMLElement>('#acTable > tbody > tr'));
+
+  return aircraftRows
+    .map((row): AirportAircraft | null => {
+      const cells = extractTableCellValuesFromRow(row);
+      const registration = getOptionalCell(cells, 0)?.replace('*', '').trim();
+      const type = getOptionalCell(cells, 1)?.trim();
+      const homeIcao =
+        row.querySelectorAll('td')[3]?.querySelector<HTMLAnchorElement>('a[href*="airport.jsp?icao="]')?.textContent?.trim() ??
+        getOptionalCell(cells, 3)?.trim();
+      const bonusCell = getOptionalCell(cells, 4) ?? '';
+      const priceCell = row.querySelectorAll('td')[5];
+      const rentalPriceDry = priceCell ? extractRentalPriceFromElement(priceCell, 'Dry') : null;
+      const rentalPriceWet = priceCell ? extractRentalPriceFromElement(priceCell, 'Wet') : null;
+
+      if (!registration || !type || !homeIcao) {
+        return null;
+      }
+
+      return {
+        registration,
+        type,
+        homeIcao,
+        distanceBonus: getDistanceBonus(bonusCell),
+        rentalPriceDry,
+        rentalPriceWet,
+        isRentableDry: rentalPriceDry != null,
+        isRentableWet: rentalPriceWet != null,
+        needsRepair: row.querySelector('td i.fa-wrench, td img[src="img/repair.gif"], td img[src*="repair"]') != null,
+      };
+    })
+    .filter((aircraft): aircraft is AirportAircraft => aircraft !== null);
+};
+
+const getPayPerNm = (summary: Pick<DestinationSummary, 'distanceNm' | 'totalPay'>): number =>
+  summary.distanceNm > 0 ? summary.totalPay / summary.distanceNm : 0;
+
+const getBestCombinablePassengerAssignments = (
+  assignments: AirportAssignment[],
+  maxPassengerPayload: number | null,
+): AirportAssignment[] => {
+  if (assignments.length === 0) {
+    return [];
+  }
+
+  const capacity =
+    maxPassengerPayload ??
+    assignments.reduce((sum, assignment) => sum + Math.max(assignment.payload, 0), 0);
+
+  if (capacity <= 0) {
+    return [];
+  }
+
+  const bestByPayload = new Map<number, AirportAssignment[]>();
+  const payByPayload = new Map<number, number>();
+  bestByPayload.set(0, []);
+  payByPayload.set(0, 0);
+
+  assignments.forEach((assignment) => {
+    if (assignment.payload <= 0 || assignment.payload > capacity) {
+      return;
+    }
+
+    const currentEntries = Array.from(bestByPayload.entries()).sort((left, right) => right[0] - left[0]);
+    currentEntries.forEach(([usedPayload, chosenAssignments]) => {
+      const nextPayload = usedPayload + assignment.payload;
+      if (nextPayload > capacity) {
+        return;
+      }
+
+      const nextPay = (payByPayload.get(usedPayload) ?? 0) + assignment.pay;
+      const previousPay = payByPayload.get(nextPayload) ?? Number.NEGATIVE_INFINITY;
+      if (nextPay > previousPay) {
+        bestByPayload.set(nextPayload, [...chosenAssignments, assignment]);
+        payByPayload.set(nextPayload, nextPay);
+      }
+    });
+  });
+
+  let bestAssignments: AirportAssignment[] = [];
+  let bestPay = Number.NEGATIVE_INFINITY;
+  let bestPayload = 0;
+
+  bestByPayload.forEach((chosenAssignments, payload) => {
+    const totalPay = payByPayload.get(payload) ?? Number.NEGATIVE_INFINITY;
+    if (totalPay > bestPay || (totalPay === bestPay && payload > bestPayload)) {
+      bestAssignments = chosenAssignments;
+      bestPay = totalPay;
+      bestPayload = payload;
+    }
+  });
+
+  return bestAssignments;
+};
+
+const getDestinationSummary = (
+  destination: string,
+  assignments: AirportAssignment[],
+  filters: DispatchFilters,
+): DestinationSummary | null => {
+  const selectedTypes = new Set(filters.selectedAssignmentTypes);
+  const matchingAssignments = assignments.filter((assignment) => selectedTypes.has(assignment.assignmentType));
+  if (matchingAssignments.length === 0) {
+    return null;
+  }
+
+  const cargoAssignments = matchingAssignments.filter((assignment) => assignment.payloadUnit === 'kg');
+  const combinablePassengerAssignments = matchingAssignments.filter(
+    (assignment) => assignment.payloadUnit === 'pax' && assignment.assignmentType === 'T',
+  );
+  const exclusivePassengerAssignments = matchingAssignments.filter(
+    (assignment) => assignment.payloadUnit === 'pax' && assignment.assignmentType !== 'T',
+  );
+
+  const bestCombinablePassengerAssignments = getBestCombinablePassengerAssignments(
+    combinablePassengerAssignments,
+    filters.maxPassengerPayload,
+  );
+
+  const combinableScenarioAssignments = [...cargoAssignments, ...bestCombinablePassengerAssignments];
+  const combinableScenarioPay = combinableScenarioAssignments.reduce((sum, assignment) => sum + assignment.pay, 0);
+
+  const bestExclusiveAssignment =
+    exclusivePassengerAssignments
+      .filter((assignment) => filters.maxPassengerPayload == null || assignment.payload <= filters.maxPassengerPayload)
+      .sort((left, right) => right.pay - left.pay)[0] ?? null;
+
+  const selectedAssignments =
+    bestExclusiveAssignment && bestExclusiveAssignment.pay > combinableScenarioPay
+      ? [bestExclusiveAssignment]
+      : combinableScenarioAssignments;
+
+  if (selectedAssignments.length === 0) {
+    return null;
+  }
+
+  const payloadUnits = new Set(selectedAssignments.map((assignment) => assignment.payloadUnit));
+  const totalPay = selectedAssignments.reduce((sum, assignment) => sum + assignment.pay, 0);
+  const totalPayload = selectedAssignments.reduce((sum, assignment) => sum + assignment.payload, 0);
+
+  return {
+    destination,
+    assignmentCount: selectedAssignments.length,
+    totalPay,
+    totalPayload,
+    payloadUnit: payloadUnits.size > 1 ? 'mixed' : (selectedAssignments[0]?.payloadUnit ?? 'pax'),
+    distanceNm: selectedAssignments[0]?.distance ?? matchingAssignments[0]?.distance ?? 0,
+    bestPayPerNm: (selectedAssignments[0]?.distance ?? matchingAssignments[0]?.distance ?? 0) > 0
+      ? totalPay / (selectedAssignments[0]?.distance ?? matchingAssignments[0]?.distance ?? 1)
+      : 0,
+    passengerTerminalCount: selectedAssignments.filter((assignment) => assignment.isPassengerTerminalAssignment).length,
+    aircraftSpecificCount: selectedAssignments.filter((assignment) => assignment.aircraftRegistration).length,
+    selectedAssignments,
+  };
+};
+
+const getFilteredAssignments = (assignments: AirportAssignment[], filters: DispatchFilters): AirportAssignment[] => {
+  const selectedTypes = new Set(filters.selectedAssignmentTypes);
+  return assignments.filter((assignment) => {
+    if (!selectedTypes.has(assignment.assignmentType)) {
+      return false;
+    }
+
+    if (
+      filters.maxPassengerPayload != null &&
+      assignment.payloadUnit === 'pax' &&
+      assignment.assignmentType !== 'T' &&
+      assignment.payload > filters.maxPassengerPayload
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+};
+
+const getDestinationSummaries = (assignments: AirportAssignment[], filters: DispatchFilters): DestinationSummary[] => {
+  const assignmentsByDestination = new Map<string, AirportAssignment[]>();
+
+  assignments.forEach((assignment) => {
+    const destinationAssignments = assignmentsByDestination.get(assignment.destination) ?? [];
+    destinationAssignments.push(assignment);
+    assignmentsByDestination.set(assignment.destination, destinationAssignments);
+  });
+
+  return Array.from(assignmentsByDestination.entries())
+    .map(([destination, destinationAssignments]) => getDestinationSummary(destination, destinationAssignments, filters))
+    .filter((summary): summary is DestinationSummary => summary !== null)
+    .sort((left, right) => {
+      const primaryDifference =
+        filters.rankingMode === 'payPerNm'
+          ? getPayPerNm(right) - getPayPerNm(left)
+          : right.totalPay - left.totalPay;
+
+      if (primaryDifference !== 0) {
+        return primaryDifference;
+      }
+
+      return filters.rankingMode === 'payPerNm' ? right.totalPay - left.totalPay : getPayPerNm(right) - getPayPerNm(left);
+    });
+};
+
+const createDispatchSummarySection = (
+  assignments: AirportAssignment[],
+  aircraft: AirportAircraft[],
+  nearestAirports: Array<{ icao: string; distanceNm: number | null }>,
+): HTMLDivElement => {
+  const readyAircraft = aircraft.filter((candidate) => !candidate.needsRepair && (candidate.isRentableDry || candidate.isRentableWet));
+  const nearestAirport = nearestAirports[0] ?? null;
+  const filters: DispatchFilters = {
+    selectedAssignmentTypes: ['T', 'V', 'A'],
+    maxPassengerPayload: null,
+    rankingMode: 'totalPay',
+  };
+  const section = createSectionCard('Dispatch summary', readyAircraft.length === 0 || assignments.length === 0, {
+    flex: '2 1 64%',
+    minWidth: '420px',
+  });
+  const controlsRow = createFormRow();
+  const assignmentTypeCheckboxes = createCheckboxGroup();
+  const tCheckbox = createCheckboxChip('T', true);
+  const vCheckbox = createCheckboxChip('V', true);
+  const aCheckbox = createCheckboxChip('A', true);
+  assignmentTypeCheckboxes.append(tCheckbox.wrapper, vCheckbox.wrapper, aCheckbox.wrapper);
+  controlsRow.append(createFieldGroup('Job types', assignmentTypeCheckboxes));
+
+  const maxPassengerPayloadInput = createNumberInputControl();
+  controlsRow.append(createFieldGroup('Max pax', maxPassengerPayloadInput));
+
+  const rankingModeSelect = createSelectControl();
+  [
+    { value: 'totalPay', label: 'Best total pay' },
+    { value: 'payPerNm', label: 'Best pay per mile' },
+  ].forEach(({ value, label }) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    rankingModeSelect.append(option);
+  });
+  controlsRow.append(createFieldGroup('Rank by', rankingModeSelect));
+  section.append(controlsRow);
+
+  const content = document.createElement('div');
+  content.style.display = 'flex';
+  content.style.flexDirection = 'column';
+  content.style.gap = '10px';
+  content.style.marginTop = '10px';
+  section.append(content);
+
+  const render = () => {
+    const filteredAssignments = getFilteredAssignments(assignments, filters);
+    const destinationSummaries = getDestinationSummaries(filteredAssignments, filters);
+    const topDestination = destinationSummaries[0] ?? null;
+    const metrics = createMetricGrid();
+    metrics.append(
+      createMetricCard(
+        'Jobs',
+        String(destinationSummaries.reduce((sum, summary) => sum + summary.selectedAssignments.length, 0)),
+      ),
+      createMetricCard('Destinations', String(destinationSummaries.length)),
+      createMetricCard('Ready rentals', String(readyAircraft.length)),
+      createMetricCard('Needs repair', String(aircraft.filter((candidate) => candidate.needsRepair).length)),
+    );
+
+    const notes = createList();
+    if (topDestination) {
+      const payPerNm = getPayPerNm(topDestination);
+      notes.append(
+        createInfoItem(
+          `Best outbound lane is ${topDestination.destination}: ${formatCurrency(topDestination.totalPay)} across ${topDestination.assignmentCount} job${topDestination.assignmentCount === 1 ? '' : 's'} for ${formatSelectedPayload(topDestination.selectedAssignments)}.`,
+        ),
+      );
+      notes.append(
+        createSummaryRow(
+          'Ranking result',
+          `${filters.rankingMode === 'payPerNm' ? `${formatCurrency(payPerNm)}/NM` : formatCurrency(topDestination.totalPay)} • ${topDestination.distanceNm} NM • ${topDestination.selectedAssignments.map((assignment) => assignment.payloadString).join(', ')}`,
+          `/airport.jsp?icao=${topDestination.destination}`,
+        ),
+      );
+    }
+    const selectedPassengerAssignments = destinationSummaries.flatMap((summary) =>
+      summary.selectedAssignments.filter((assignment) => assignment.payloadUnit === 'pax'),
+    );
+    const selectedCargoAssignments = destinationSummaries.flatMap((summary) =>
+      summary.selectedAssignments.filter((assignment) => assignment.payloadUnit === 'kg'),
+    );
+    if (selectedPassengerAssignments.length > 0 || selectedCargoAssignments.length > 0) {
+      notes.append(
+        createSummaryRow(
+          'Payload mix',
+          `${selectedPassengerAssignments.length} passenger job${selectedPassengerAssignments.length === 1 ? '' : 's'}, ${selectedCargoAssignments.length} cargo job${selectedCargoAssignments.length === 1 ? '' : 's'}.`,
+        ),
+      );
+    }
+    if (nearestAirport?.distanceNm != null) {
+      notes.append(
+        createSummaryRow(
+          'Nearby fallback',
+          `${nearestAirport.icao} is ${nearestAirport.distanceNm.toFixed(0)} NM away if this field looks thin.`,
+          `/airport.jsp?icao=${nearestAirport.icao}`,
+        ),
+      );
+    }
+    if (readyAircraft.length === 0 && destinationSummaries.length > 0) {
+      notes.append(createWarningItem('There are outbound jobs here, but no ready rentable aircraft on the field.'));
+    }
+    if (filters.selectedAssignmentTypes.length === 0) {
+      notes.append(createWarningItem('Select at least one job type.'));
+    } else if (readyAircraft.length > 0 && destinationSummaries.length === 0) {
+      notes.append(createWarningItem('No assignments match the current dispatch filters.'));
+    }
+    if (aircraft.length > 0 && readyAircraft.length === 0 && aircraft.some((candidate) => candidate.needsRepair)) {
+      notes.append(createWarningItem('Every visible rental option appears blocked by repair status.'));
+    }
+    if (notes.childElementCount === 0) {
+      notes.append(createEmptyState('No obvious dispatch signal was found for the current filters.'));
+    }
+
+    const rankedDestinations = createList();
+    if (destinationSummaries.length > 0) {
+      destinationSummaries.slice(0, 5).forEach((summary) => {
+        const rankingValue =
+          filters.rankingMode === 'payPerNm'
+            ? `${formatCurrency(getPayPerNm(summary))}/NM`
+            : formatCurrency(summary.totalPay);
+        rankedDestinations.append(
+          createSummaryRow(
+            summary.destination,
+            `${rankingValue} • ${summary.distanceNm} NM • ${formatSelectedPayload(summary.selectedAssignments)} • ${summary.assignmentCount} job${summary.assignmentCount === 1 ? '' : 's'}`,
+            `/airport.jsp?icao=${summary.destination}`,
+          ),
+        );
+      });
+    } else {
+      rankedDestinations.append(createEmptyState('No outbound destinations were found for the current filters.'));
+    }
+
+    content.replaceChildren(metrics, notes, rankedDestinations);
+  };
+
+  const syncSelectedAssignmentTypes = () => {
+    const selectedTypes: Array<'T' | 'V' | 'A'> = [];
+    if (tCheckbox.input.checked) selectedTypes.push('T');
+    if (vCheckbox.input.checked) selectedTypes.push('V');
+    if (aCheckbox.input.checked) selectedTypes.push('A');
+    filters.selectedAssignmentTypes = selectedTypes;
+  };
+
+  [tCheckbox.input, vCheckbox.input, aCheckbox.input].forEach((checkbox) =>
+    checkbox.addEventListener('change', () => {
+      syncSelectedAssignmentTypes();
+      render();
+    }),
+  );
+
+  maxPassengerPayloadInput.addEventListener('input', () => {
+    const parsed = Number.parseInt(maxPassengerPayloadInput.value, 10);
+    filters.maxPassengerPayload =
+      Number.isNaN(parsed) || parsed <= 0 ? null : parsed;
+    render();
+  });
+
+  rankingModeSelect.addEventListener('change', () => {
+    filters.rankingMode = rankingModeSelect.value as DispatchFilters['rankingMode'];
+    render();
+  });
+
+  render();
+
+  return section;
+};
+
 const updateIcaoHeading = (element: HTMLElement | null, icao: string): void => {
   if (!element) {
     return;
@@ -400,6 +1115,9 @@ export const enhanceAirport = () => {
   updateIcaoHeading(findAirportIcaoHeadingElement(), icao);
 
   const panel = createPanel();
+  const assignments = getAirportAssignments();
+  const aircraft = getAirportAircraft();
+  const nearestAirports = getNearestAirports();
 
   const headerRow = createRow();
   headerRow.append(createBadge());
@@ -410,6 +1128,7 @@ export const enhanceAirport = () => {
 
   const sectionsRow = createSectionsRow();
   sectionsRow.append(createMsfsValidationSection(icao, coordinates));
+  sectionsRow.append(createDispatchSummarySection(assignments, aircraft, nearestAirports));
   panel.append(sectionsRow);
 
   panel.append(
@@ -445,6 +1164,8 @@ export const airportEnhancer: SiteEnhancerDefinition = {
     const parsedCoordinates = coordinatesElement ? parseAirportCoordinates(getTextContent(coordinatesElement)) : null;
     const msfsValidation = icao.value && parsedCoordinates ? getMsfsValidation(icao.value, parsedCoordinates) : null;
     const nearestAirports = getNearestAirports();
+    const assignments = getAirportAssignments();
+    const aircraft = getAirportAircraft();
 
     return {
       enhancerPanelInjected: !!document.getElementById(ENHANCER_ID),
@@ -467,6 +1188,13 @@ export const airportEnhancer: SiteEnhancerDefinition = {
       hasAirportWithoutIcaoWarning: icao.value ? airportsWithoutIcao.includes(icao.value) : false,
       hasNonExistingAirportWarning: icao.value ? nonExistingAirports.includes(icao.value) : false,
       nearestAirports,
+      assignmentCount: assignments.length,
+      assignmentDestinations: [...new Set(assignments.map((assignment) => assignment.destination))].length,
+      aircraftCount: aircraft.length,
+      rentableAircraftCount: aircraft.filter((candidate) => candidate.isRentableDry || candidate.isRentableWet).length,
+      readyRentableAircraftCount: aircraft.filter(
+        (candidate) => !candidate.needsRepair && (candidate.isRentableDry || candidate.isRentableWet),
+      ).length,
     };
   },
 };
