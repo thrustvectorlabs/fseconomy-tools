@@ -33,3 +33,7 @@
 - Prefer `rg` for code search.
 - Keep enhancements additive. Do not break native FSE actions or form submissions.
 - When touching site enhancers, avoid duplicate insertion by assigning a stable DOM id to injected UI.
+
+## Example pages
+
+- Only read example pages when explicitly asked to. The files are very big and may clutter the context window unnecessarily. The example pages are located in docs/example-pages/, which are mirrored copies of the original website.
