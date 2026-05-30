@@ -73,7 +73,6 @@ type DestinationSummary = {
 type DispatchFilters = {
   selectedAssignmentTypes: Array<'T' | 'V' | 'A'>;
   maxPassengerPayload: number | null;
-  rankingMode: 'totalPay' | 'payPerNm';
 };
 
 const msfsAirportByIdent = new Map(
@@ -323,17 +322,6 @@ const createFieldGroup = (label: string, control: HTMLElement): HTMLLabelElement
   return group;
 };
 
-const createSelectControl = (): HTMLSelectElement => {
-  const select = document.createElement('select');
-  select.style.minWidth = '120px';
-  select.style.padding = '6px 8px';
-  select.style.border = '1px solid #cbd5e1';
-  select.style.borderRadius = '4px';
-  select.style.backgroundColor = '#fff';
-  select.style.color = '#0f172a';
-  return select;
-};
-
 const createNumberInputControl = (): HTMLInputElement => {
   const input = document.createElement('input');
   input.type = 'number';
@@ -357,7 +345,10 @@ const createCheckboxGroup = (): HTMLDivElement => {
   return group;
 };
 
-const createCheckboxChip = (label: string, checked: boolean): { wrapper: HTMLLabelElement; input: HTMLInputElement } => {
+const createCheckboxChip = (
+  label: string,
+  checked: boolean,
+): { wrapper: HTMLLabelElement; input: HTMLInputElement } => {
   const wrapper = document.createElement('label');
   wrapper.style.display = 'inline-flex';
   wrapper.style.alignItems = 'center';
@@ -693,8 +684,10 @@ const getAirportAircraft = (): AirportAircraft[] => {
       const registration = getOptionalCell(cells, 0)?.replace('*', '').trim();
       const type = getOptionalCell(cells, 1)?.trim();
       const homeIcao =
-        row.querySelectorAll('td')[3]?.querySelector<HTMLAnchorElement>('a[href*="airport.jsp?icao="]')?.textContent?.trim() ??
-        getOptionalCell(cells, 3)?.trim();
+        row
+          .querySelectorAll('td')[3]
+          ?.querySelector<HTMLAnchorElement>('a[href*="airport.jsp?icao="]')
+          ?.textContent?.trim() ?? getOptionalCell(cells, 3)?.trim();
       const bonusCell = getOptionalCell(cells, 4) ?? '';
       const priceCell = row.querySelectorAll('td')[5];
       const rentalPriceDry = priceCell ? extractRentalPriceFromElement(priceCell, 'Dry') : null;
@@ -731,8 +724,7 @@ const getBestCombinablePassengerAssignments = (
   }
 
   const capacity =
-    maxPassengerPayload ??
-    assignments.reduce((sum, assignment) => sum + Math.max(assignment.payload, 0), 0);
+    maxPassengerPayload ?? assignments.reduce((sum, assignment) => sum + Math.max(assignment.payload, 0), 0);
 
   if (capacity <= 0) {
     return [];
@@ -832,9 +824,10 @@ const getDestinationSummary = (
     totalPayload,
     payloadUnit: payloadUnits.size > 1 ? 'mixed' : (selectedAssignments[0]?.payloadUnit ?? 'pax'),
     distanceNm: selectedAssignments[0]?.distance ?? matchingAssignments[0]?.distance ?? 0,
-    bestPayPerNm: (selectedAssignments[0]?.distance ?? matchingAssignments[0]?.distance ?? 0) > 0
-      ? totalPay / (selectedAssignments[0]?.distance ?? matchingAssignments[0]?.distance ?? 1)
-      : 0,
+    bestPayPerNm:
+      (selectedAssignments[0]?.distance ?? matchingAssignments[0]?.distance ?? 0) > 0
+        ? totalPay / (selectedAssignments[0]?.distance ?? matchingAssignments[0]?.distance ?? 1)
+        : 0,
     passengerTerminalCount: selectedAssignments.filter((assignment) => assignment.isPassengerTerminalAssignment).length,
     aircraftSpecificCount: selectedAssignments.filter((assignment) => assignment.aircraftRegistration).length,
     selectedAssignments,
@@ -872,32 +865,35 @@ const getDestinationSummaries = (assignments: AirportAssignment[], filters: Disp
 
   return Array.from(assignmentsByDestination.entries())
     .map(([destination, destinationAssignments]) => getDestinationSummary(destination, destinationAssignments, filters))
-    .filter((summary): summary is DestinationSummary => summary !== null)
-    .sort((left, right) => {
-      const primaryDifference =
-        filters.rankingMode === 'payPerNm'
-          ? getPayPerNm(right) - getPayPerNm(left)
-          : right.totalPay - left.totalPay;
-
-      if (primaryDifference !== 0) {
-        return primaryDifference;
-      }
-
-      return filters.rankingMode === 'payPerNm' ? right.totalPay - left.totalPay : getPayPerNm(right) - getPayPerNm(left);
-    });
+    .filter((summary): summary is DestinationSummary => summary !== null);
 };
+
+const getTopDestinationSummary = (
+  destinationSummaries: DestinationSummary[],
+  rankingMode: 'totalPay' | 'payPerNm',
+): DestinationSummary | null =>
+  [...destinationSummaries].sort((left, right) => {
+    const primaryDifference =
+      rankingMode === 'payPerNm' ? getPayPerNm(right) - getPayPerNm(left) : right.totalPay - left.totalPay;
+
+    if (primaryDifference !== 0) {
+      return primaryDifference;
+    }
+
+    return rankingMode === 'payPerNm' ? right.totalPay - left.totalPay : getPayPerNm(right) - getPayPerNm(left);
+  })[0] ?? null;
 
 const createDispatchSummarySection = (
   assignments: AirportAssignment[],
   aircraft: AirportAircraft[],
   nearestAirports: Array<{ icao: string; distanceNm: number | null }>,
 ): HTMLDivElement => {
-  const readyAircraft = aircraft.filter((candidate) => !candidate.needsRepair && (candidate.isRentableDry || candidate.isRentableWet));
-  const nearestAirport = nearestAirports[0] ?? null;
+  const readyAircraft = aircraft.filter(
+    (candidate) => !candidate.needsRepair && (candidate.isRentableDry || candidate.isRentableWet),
+  );
   const filters: DispatchFilters = {
     selectedAssignmentTypes: ['T', 'V', 'A'],
     maxPassengerPayload: null,
-    rankingMode: 'totalPay',
   };
   const section = createSectionCard('Dispatch summary', readyAircraft.length === 0 || assignments.length === 0, {
     flex: '2 1 64%',
@@ -913,18 +909,6 @@ const createDispatchSummarySection = (
 
   const maxPassengerPayloadInput = createNumberInputControl();
   controlsRow.append(createFieldGroup('Max pax', maxPassengerPayloadInput));
-
-  const rankingModeSelect = createSelectControl();
-  [
-    { value: 'totalPay', label: 'Best total pay' },
-    { value: 'payPerNm', label: 'Best pay per mile' },
-  ].forEach(({ value, label }) => {
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent = label;
-    rankingModeSelect.append(option);
-  });
-  controlsRow.append(createFieldGroup('Rank by', rankingModeSelect));
   section.append(controlsRow);
 
   const content = document.createElement('div');
@@ -937,7 +921,8 @@ const createDispatchSummarySection = (
   const render = () => {
     const filteredAssignments = getFilteredAssignments(assignments, filters);
     const destinationSummaries = getDestinationSummaries(filteredAssignments, filters);
-    const topDestination = destinationSummaries[0] ?? null;
+    const bestTotalPayJob = getTopDestinationSummary(destinationSummaries, 'totalPay');
+    const bestPayPerMileJob = getTopDestinationSummary(destinationSummaries, 'payPerNm');
     const metrics = createMetricGrid();
     metrics.append(
       createMetricCard(
@@ -950,41 +935,21 @@ const createDispatchSummarySection = (
     );
 
     const notes = createList();
-    if (topDestination) {
-      const payPerNm = getPayPerNm(topDestination);
-      notes.append(
-        createInfoItem(
-          `Best outbound lane is ${topDestination.destination}: ${formatCurrency(topDestination.totalPay)} across ${topDestination.assignmentCount} job${topDestination.assignmentCount === 1 ? '' : 's'} for ${formatSelectedPayload(topDestination.selectedAssignments)}.`,
-        ),
-      );
+    if (bestTotalPayJob) {
       notes.append(
         createSummaryRow(
-          'Ranking result',
-          `${filters.rankingMode === 'payPerNm' ? `${formatCurrency(payPerNm)}/NM` : formatCurrency(topDestination.totalPay)} • ${topDestination.distanceNm} NM • ${topDestination.selectedAssignments.map((assignment) => assignment.payloadString).join(', ')}`,
-          `/airport.jsp?icao=${topDestination.destination}`,
+          'Best total pay job',
+          `${bestTotalPayJob.destination} • ${formatCurrency(bestTotalPayJob.totalPay)} • ${bestTotalPayJob.distanceNm} NM • ${formatSelectedPayload(bestTotalPayJob.selectedAssignments)} • ${bestTotalPayJob.assignmentCount} job${bestTotalPayJob.assignmentCount === 1 ? '' : 's'}`,
+          `/airport.jsp?icao=${bestTotalPayJob.destination}`,
         ),
       );
     }
-    const selectedPassengerAssignments = destinationSummaries.flatMap((summary) =>
-      summary.selectedAssignments.filter((assignment) => assignment.payloadUnit === 'pax'),
-    );
-    const selectedCargoAssignments = destinationSummaries.flatMap((summary) =>
-      summary.selectedAssignments.filter((assignment) => assignment.payloadUnit === 'kg'),
-    );
-    if (selectedPassengerAssignments.length > 0 || selectedCargoAssignments.length > 0) {
+    if (bestPayPerMileJob) {
       notes.append(
         createSummaryRow(
-          'Payload mix',
-          `${selectedPassengerAssignments.length} passenger job${selectedPassengerAssignments.length === 1 ? '' : 's'}, ${selectedCargoAssignments.length} cargo job${selectedCargoAssignments.length === 1 ? '' : 's'}.`,
-        ),
-      );
-    }
-    if (nearestAirport?.distanceNm != null) {
-      notes.append(
-        createSummaryRow(
-          'Nearby fallback',
-          `${nearestAirport.icao} is ${nearestAirport.distanceNm.toFixed(0)} NM away if this field looks thin.`,
-          `/airport.jsp?icao=${nearestAirport.icao}`,
+          'Best pay per mile job',
+          `${bestPayPerMileJob.destination} • ${formatCurrency(getPayPerNm(bestPayPerMileJob))}/NM • ${formatCurrency(bestPayPerMileJob.totalPay)} • ${bestPayPerMileJob.distanceNm} NM • ${formatSelectedPayload(bestPayPerMileJob.selectedAssignments)} • ${bestPayPerMileJob.assignmentCount} job${bestPayPerMileJob.assignmentCount === 1 ? '' : 's'}`,
+          `/airport.jsp?icao=${bestPayPerMileJob.destination}`,
         ),
       );
     }
@@ -1003,26 +968,7 @@ const createDispatchSummarySection = (
       notes.append(createEmptyState('No obvious dispatch signal was found for the current filters.'));
     }
 
-    const rankedDestinations = createList();
-    if (destinationSummaries.length > 0) {
-      destinationSummaries.slice(0, 5).forEach((summary) => {
-        const rankingValue =
-          filters.rankingMode === 'payPerNm'
-            ? `${formatCurrency(getPayPerNm(summary))}/NM`
-            : formatCurrency(summary.totalPay);
-        rankedDestinations.append(
-          createSummaryRow(
-            summary.destination,
-            `${rankingValue} • ${summary.distanceNm} NM • ${formatSelectedPayload(summary.selectedAssignments)} • ${summary.assignmentCount} job${summary.assignmentCount === 1 ? '' : 's'}`,
-            `/airport.jsp?icao=${summary.destination}`,
-          ),
-        );
-      });
-    } else {
-      rankedDestinations.append(createEmptyState('No outbound destinations were found for the current filters.'));
-    }
-
-    content.replaceChildren(metrics, notes, rankedDestinations);
+    content.replaceChildren(metrics, notes);
   };
 
   const syncSelectedAssignmentTypes = () => {
@@ -1042,13 +988,7 @@ const createDispatchSummarySection = (
 
   maxPassengerPayloadInput.addEventListener('input', () => {
     const parsed = Number.parseInt(maxPassengerPayloadInput.value, 10);
-    filters.maxPassengerPayload =
-      Number.isNaN(parsed) || parsed <= 0 ? null : parsed;
-    render();
-  });
-
-  rankingModeSelect.addEventListener('change', () => {
-    filters.rankingMode = rankingModeSelect.value as DispatchFilters['rankingMode'];
+    filters.maxPassengerPayload = Number.isNaN(parsed) || parsed <= 0 ? null : parsed;
     render();
   });
 
@@ -1122,7 +1062,7 @@ export const enhanceAirport = () => {
   const headerRow = createRow();
   headerRow.append(createBadge());
   const title = document.createElement('strong');
-  title.textContent = 'Airport helpers';
+  title.textContent = 'Airport Dispatcher';
   headerRow.append(title);
   panel.append(headerRow);
 
