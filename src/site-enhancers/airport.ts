@@ -9,6 +9,7 @@ import { SiteEnhancerDefinition } from './types';
 
 const ENHANCER_ID = 'fset-airport-enhancer';
 const AIRPORT_PATHNAME = '/airport.jsp';
+const MY_FLIGHT_PATHNAME = '/myflight.jsp';
 const MSFS_COORDINATE_PRECISION = 100;
 
 type Msfs2020Airport = {
@@ -377,7 +378,15 @@ const createList = (): HTMLDivElement => {
   return list;
 };
 
-const createSummaryRow = (title: string, details: string, href?: string): HTMLDivElement => {
+const createSummaryRow = (
+  title: string,
+  details: string,
+  href?: string,
+  action?: {
+    label: string;
+    onClick: () => void;
+  },
+): HTMLDivElement => {
   const row = document.createElement('div');
   row.style.padding = '10px';
   row.style.border = '1px solid #e2e8f0';
@@ -402,6 +411,20 @@ const createSummaryRow = (title: string, details: string, href?: string): HTMLDi
   detailsElement.style.color = '#475569';
   detailsElement.style.fontSize = '13px';
   row.append(detailsElement);
+
+  if (action) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = action.label;
+    button.style.marginTop = '8px';
+    button.style.cursor = 'pointer';
+    button.style.border = '1px solid #bec8d2';
+    button.style.backgroundColor = '#fff';
+    button.style.borderRadius = '4px';
+    button.style.padding = '6px 10px';
+    button.addEventListener('click', action.onClick);
+    row.append(button);
+  }
 
   return row;
 };
@@ -661,6 +684,72 @@ const getAirportAssignments = (): AirportAssignment[] => {
       };
     })
     .filter((assignment): assignment is AirportAssignment => assignment !== null);
+};
+
+const getAirportAssignmentForm = (): HTMLFormElement | null => {
+  const firstAssignmentCheckbox = document.querySelector<HTMLInputElement>('#jobTable input[type="checkbox"][name="select"]');
+  if (firstAssignmentCheckbox?.form) {
+    return firstAssignmentCheckbox.form;
+  }
+
+  return document.querySelector<HTMLFormElement>('#jobTable form') ?? document.querySelector<HTMLFormElement>('form');
+};
+
+const submitAssignmentsToMyFlight = (assignmentIds: number[]): void => {
+  if (assignmentIds.length === 0) {
+    window.alert('No assignments were selected for My Flight.');
+    return;
+  }
+
+  const assignmentForm = getAirportAssignmentForm();
+  if (!assignmentForm) {
+    window.alert('Could not find the airport assignment form.');
+    return;
+  }
+
+  const assignmentIdSet = new Set(assignmentIds.map(String));
+  const visibleAssignmentIds = new Set(
+    Array.from(document.querySelectorAll<HTMLInputElement>('#jobTable input[type="checkbox"][name="select"]')).map(
+      (checkbox) => checkbox.value,
+    ),
+  );
+  const missingAssignments = [...assignmentIdSet].filter((assignmentId) => !visibleAssignmentIds.has(assignmentId));
+  if (missingAssignments.length > 0) {
+    window.alert('One or more recommended assignments are no longer visible on this page.');
+    return;
+  }
+
+  const submissionForm = document.createElement('form');
+  submissionForm.method = (assignmentForm.method || 'post').toLowerCase();
+  submissionForm.action = assignmentForm.action || '/userctl';
+  submissionForm.style.display = 'none';
+
+  const sourceData = new FormData(assignmentForm);
+  sourceData.delete('select');
+  sourceData.set('returnpage', MY_FLIGHT_PATHNAME);
+
+  sourceData.forEach((value, key) => {
+    if (typeof value !== 'string') {
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = value;
+    submissionForm.append(input);
+  });
+
+  assignmentIds.forEach((assignmentId) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'select';
+    input.value = String(assignmentId);
+    submissionForm.append(input);
+  });
+
+  document.body.append(submissionForm);
+  submissionForm.submit();
 };
 
 const extractRentalPriceFromElement = (priceCell: Element, priceType: 'Dry' | 'Wet'): number | null => {
@@ -941,6 +1030,11 @@ const createDispatchSummarySection = (
           'Best total pay job',
           `${bestTotalPayJob.destination} • ${formatCurrency(bestTotalPayJob.totalPay)} • ${bestTotalPayJob.distanceNm} NM • ${formatSelectedPayload(bestTotalPayJob.selectedAssignments)} • ${bestTotalPayJob.assignmentCount} job${bestTotalPayJob.assignmentCount === 1 ? '' : 's'}`,
           `/airport.jsp?icao=${bestTotalPayJob.destination}`,
+          {
+            label: 'Load to My Flight',
+            onClick: () =>
+              submitAssignmentsToMyFlight(bestTotalPayJob.selectedAssignments.map((assignment) => assignment.assignmentId)),
+          },
         ),
       );
     }
@@ -950,6 +1044,11 @@ const createDispatchSummarySection = (
           'Best pay per mile job',
           `${bestPayPerMileJob.destination} • ${formatCurrency(getPayPerNm(bestPayPerMileJob))}/NM • ${formatCurrency(bestPayPerMileJob.totalPay)} • ${bestPayPerMileJob.distanceNm} NM • ${formatSelectedPayload(bestPayPerMileJob.selectedAssignments)} • ${bestPayPerMileJob.assignmentCount} job${bestPayPerMileJob.assignmentCount === 1 ? '' : 's'}`,
           `/airport.jsp?icao=${bestPayPerMileJob.destination}`,
+          {
+            label: 'Load to My Flight',
+            onClick: () =>
+              submitAssignmentsToMyFlight(bestPayPerMileJob.selectedAssignments.map((assignment) => assignment.assignmentId)),
+          },
         ),
       );
     }
