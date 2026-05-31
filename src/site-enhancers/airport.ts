@@ -82,6 +82,7 @@ type DestinationSummary = {
 type DispatchFilters = {
   selectedAssignmentTypes: Array<'T' | 'V' | 'A'>;
   maxPassengerPayload: number | null;
+  maxRangeNm: number | null;
   excludedDestinations: Set<string>;
 };
 
@@ -1253,6 +1254,10 @@ const getFilteredAssignments = (assignments: AirportAssignment[], filters: Dispa
       return false;
     }
 
+    if (filters.maxRangeNm != null && assignment.distance > filters.maxRangeNm) {
+      return false;
+    }
+
     if (
       filters.maxPassengerPayload != null &&
       assignment.payloadUnit === 'pax' &&
@@ -1306,6 +1311,7 @@ const createDispatchSummarySection = (
   const filters: DispatchFilters = {
     selectedAssignmentTypes: ['T', 'V', 'A'],
     maxPassengerPayload: null,
+    maxRangeNm: null,
     excludedDestinations: getDestinationValidationWarnings(),
   };
   const section = createSectionCard('Dispatch summary', readyAircraft.length === 0 || assignments.length === 0, {
@@ -1322,6 +1328,8 @@ const createDispatchSummarySection = (
 
   const maxPassengerPayloadInput = createNumberInputControl();
   controlsRow.append(createFieldGroup('Max pax', maxPassengerPayloadInput));
+  const maxRangeInput = createNumberInputControl();
+  controlsRow.append(createFieldGroup('Max range', maxRangeInput));
   section.append(controlsRow);
 
   const content = document.createElement('div');
@@ -1441,60 +1449,67 @@ const createDispatchSummarySection = (
     } else if (nearbyAirportsError) {
       nearbyAirportList.append(createWarningItem(nearbyAirportsError));
     } else if (nearbyAirportResults.length > 0) {
-      const sortedNearbyAirportResults = [...nearbyAirportResults].sort((left, right) => {
-        const leftAssignments = getFilteredAssignments(left.assignments, filters);
-        const rightAssignments = getFilteredAssignments(right.assignments, filters);
-        const leftBestTotalPay = getTopDestinationSummary(getDestinationSummaries(leftAssignments, filters), 'totalPay');
-        const rightBestTotalPay = getTopDestinationSummary(getDestinationSummaries(rightAssignments, filters), 'totalPay');
-        const leftBestPay = leftBestTotalPay?.totalPay ?? 0;
-        const rightBestPay = rightBestTotalPay?.totalPay ?? 0;
+      const nearbyAirportRows: Array<{
+        icao: string;
+        distanceNm: number | null;
+        titleSuffix: string;
+        details: string;
+        totalPay: number;
+      }> = [];
 
-        if (rightBestPay !== leftBestPay) {
-          return rightBestPay - leftBestPay;
-        }
-
-        return left.icao.localeCompare(right.icao);
-      });
-
-      sortedNearbyAirportResults.forEach((airportResult) => {
+      nearbyAirportResults.forEach((airportResult) => {
         const airportAssignments = getFilteredAssignments(airportResult.assignments, filters);
         const airportDestinationSummaries = getDestinationSummaries(airportAssignments, filters);
         const airportBestTotalPayJob = getTopDestinationSummary(airportDestinationSummaries, 'totalPay');
         const airportBestPayPerMileJob = getTopDestinationSummary(airportDestinationSummaries, 'payPerNm');
-        const distanceSuffix =
-          airportResult.distanceNm != null ? ` • ${airportResult.distanceNm.toFixed(1).replace(/\.0$/, '')} NM away` : '';
 
         if (!airportBestTotalPayJob && !airportBestPayPerMileJob) {
-          nearbyAirportList.append(
-            createSummaryRow(
-              `${airportResult.icao}${distanceSuffix}`,
-              'No assignments match the current dispatch filters.',
-              `/airport.jsp?icao=${airportResult.icao}`,
-            ),
-          );
           return;
         }
 
         if (airportBestTotalPayJob) {
-          nearbyAirportList.append(
-            createSummaryRow(
-              `${airportResult.icao}${distanceSuffix} • Best total pay job`,
-              `${airportBestTotalPayJob.destination} • ${formatCurrency(airportBestTotalPayJob.totalPay)} • ${airportBestTotalPayJob.distanceNm} NM • ${formatSelectedPayload(airportBestTotalPayJob.selectedAssignments)} • ${airportBestTotalPayJob.assignmentCount} job${airportBestTotalPayJob.assignmentCount === 1 ? '' : 's'}`,
-              `/airport.jsp?icao=${airportResult.icao}`,
-            ),
-          );
+          nearbyAirportRows.push({
+            icao: airportResult.icao,
+            distanceNm: airportResult.distanceNm,
+            titleSuffix: 'Best total pay job',
+            details: `${airportBestTotalPayJob.destination} • ${formatCurrency(airportBestTotalPayJob.totalPay)} • ${airportBestTotalPayJob.distanceNm} NM • ${formatSelectedPayload(airportBestTotalPayJob.selectedAssignments)} • ${airportBestTotalPayJob.assignmentCount} job${airportBestTotalPayJob.assignmentCount === 1 ? '' : 's'}`,
+            totalPay: airportBestTotalPayJob.totalPay,
+          });
         }
 
         if (airportBestPayPerMileJob) {
-          nearbyAirportList.append(
-            createSummaryRow(
-              `${airportResult.icao}${distanceSuffix} • Best pay per mile job`,
-              `${airportBestPayPerMileJob.destination} • ${formatCurrency(getPayPerNm(airportBestPayPerMileJob))}/NM • ${formatCurrency(airportBestPayPerMileJob.totalPay)} • ${airportBestPayPerMileJob.distanceNm} NM • ${formatSelectedPayload(airportBestPayPerMileJob.selectedAssignments)} • ${airportBestPayPerMileJob.assignmentCount} job${airportBestPayPerMileJob.assignmentCount === 1 ? '' : 's'}`,
-              `/airport.jsp?icao=${airportResult.icao}`,
-            ),
-          );
+          nearbyAirportRows.push({
+            icao: airportResult.icao,
+            distanceNm: airportResult.distanceNm,
+            titleSuffix: 'Best pay per mile job',
+            details: `${airportBestPayPerMileJob.destination} • ${formatCurrency(getPayPerNm(airportBestPayPerMileJob))}/NM • ${formatCurrency(airportBestPayPerMileJob.totalPay)} • ${airportBestPayPerMileJob.distanceNm} NM • ${formatSelectedPayload(airportBestPayPerMileJob.selectedAssignments)} • ${airportBestPayPerMileJob.assignmentCount} job${airportBestPayPerMileJob.assignmentCount === 1 ? '' : 's'}`,
+            totalPay: airportBestPayPerMileJob.totalPay,
+          });
         }
       });
+
+      nearbyAirportRows
+        .sort((left, right) => {
+          if (right.totalPay !== left.totalPay) {
+            return right.totalPay - left.totalPay;
+          }
+
+          if (left.icao !== right.icao) {
+            return left.icao.localeCompare(right.icao);
+          }
+
+          return left.titleSuffix.localeCompare(right.titleSuffix);
+        })
+        .forEach((row) => {
+          const distanceSuffix = row.distanceNm != null ? ` • ${row.distanceNm.toFixed(1).replace(/\.0$/, '')} NM away` : '';
+          nearbyAirportList.append(
+            createSummaryRow(`${row.icao}${distanceSuffix} • ${row.titleSuffix}`, row.details, `/airport.jsp?icao=${row.icao}`),
+          );
+        });
+
+      if (nearbyAirportRows.length === 0) {
+        nearbyAirportList.append(createEmptyState('No nearby airport assignments match the current dispatch filters.'));
+      }
     } else {
       nearbyAirportList.append(createEmptyState('Fetch nearby airport jobs to compare alternate departure fields.'));
     }
@@ -1541,6 +1556,12 @@ const createDispatchSummarySection = (
   maxPassengerPayloadInput.addEventListener('input', () => {
     const parsed = Number.parseInt(maxPassengerPayloadInput.value, 10);
     filters.maxPassengerPayload = Number.isNaN(parsed) || parsed <= 0 ? null : parsed;
+    render();
+  });
+
+  maxRangeInput.addEventListener('input', () => {
+    const parsed = Number.parseInt(maxRangeInput.value, 10);
+    filters.maxRangeNm = Number.isNaN(parsed) || parsed <= 0 ? null : parsed;
     render();
   });
 
