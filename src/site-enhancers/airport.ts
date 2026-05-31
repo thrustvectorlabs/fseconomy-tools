@@ -85,6 +85,17 @@ type DispatchFilters = {
   excludedDestinations: Set<string>;
 };
 
+type NearbyAirportDispatchResult = {
+  icao: string;
+  distanceNm: number | null;
+  assignments: AirportAssignment[];
+};
+
+type NearbyAirportFetchOutcome = {
+  validResults: NearbyAirportDispatchResult[];
+  excludedAirports: string[];
+};
+
 const msfsAirportByIdent = new Map(
   (msfs2020Airports as Msfs2020Airport[]).map((airport) => [airport.ident.toUpperCase(), airport]),
 );
@@ -540,6 +551,22 @@ const createButtonRow = (label: string, onClick: () => void): HTMLDivElement => 
   return row;
 };
 
+const createButton = (label: string, onClick: () => void): HTMLButtonElement => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.style.cursor = 'pointer';
+  button.style.border = '1px solid #bec8d2';
+  button.style.backgroundColor = '#fff';
+  button.style.borderRadius = '4px';
+  button.style.padding = '8px 12px';
+  button.style.color = '#0f172a';
+  button.style.fontWeight = '600';
+  button.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.06)';
+  button.addEventListener('click', onClick);
+  return button;
+};
+
 const createActionButtonsRow = (): HTMLDivElement => {
   const row = createRow();
   row.style.justifyContent = 'flex-end';
@@ -650,6 +677,9 @@ const createMsfsValidationSection = (
 const findAirportRoot = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('#mainContentDiv > div.row.clearfix');
 
+const findAirportRootInDocument = (root: ParentNode): HTMLElement | null =>
+  root.querySelector<HTMLElement>('#mainContentDiv > div.row.clearfix');
+
 const findAirportHelpersAnchor = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('#mainContentDiv > div.row.clearfix > div.col-md-5');
 
@@ -746,6 +776,21 @@ const getNearestAirports = () => {
     .filter((airport): airport is NonNullable<typeof airport> => airport !== null);
 };
 
+const createValidationIndicator = (summary: { icon: string; color: string; tooltip: string }, className: string): HTMLSpanElement => {
+  const icon = document.createElement('span');
+  icon.className = className;
+  icon.textContent = summary.icon;
+  icon.title = summary.tooltip;
+  icon.style.display = 'inline-block';
+  icon.style.marginLeft = '6px';
+  icon.style.color = summary.color;
+  icon.style.fontSize = '14px';
+  icon.style.fontWeight = '700';
+  icon.style.cursor = 'help';
+  icon.setAttribute('aria-label', summary.tooltip);
+  return icon;
+};
+
 const enhanceJobTableDestinationValidation = (): void => {
   const destinationRows = Array.from(document.querySelectorAll<HTMLTableRowElement>('#jobTable > tbody > tr'));
 
@@ -770,19 +815,80 @@ const enhanceJobTableDestinationValidation = (): void => {
 
     const validation = getMsfsValidation(airportDetails.icao, airportDetails.coordinates);
     const summary = getValidationSummary(validation);
-    const icon = document.createElement('span');
-    icon.className = 'fset-destination-validation';
-    icon.textContent = summary.icon;
-    icon.title = summary.tooltip;
-    icon.style.display = 'inline-block';
-    icon.style.marginLeft = '6px';
-    icon.style.color = summary.color;
-    icon.style.fontSize = '14px';
-    icon.style.fontWeight = '700';
-    icon.style.cursor = 'help';
-    icon.setAttribute('aria-label', summary.tooltip);
-
+    const icon = createValidationIndicator(summary, 'fset-destination-validation');
     airportLink.insertAdjacentElement('afterend', icon);
+  });
+};
+
+const getRemoteAirportValidationSummary = async (
+  icao: string,
+): Promise<{ summary: { icon: string; color: string; tooltip: string }; hasWarning: boolean } | null> => {
+  const response = await fetch(`/airport.jsp?icao=${encodeURIComponent(icao)}`);
+  const html = await response.text();
+  const dom = new DOMParser().parseFromString(html, 'text/html');
+  const airportRoot = findAirportRootInDocument(dom);
+  const coordinatesElement = airportRoot ? findCoordinatesElement(airportRoot) : null;
+  const coordinates = coordinatesElement ? parseAirportCoordinates(getTextContent(coordinatesElement)) : null;
+
+  if (!coordinates) {
+    return null;
+  }
+
+  const validation = getMsfsValidation(icao, coordinates);
+  return {
+    summary: getValidationSummary(validation),
+    hasWarning: hasValidationWarning(validation),
+  };
+};
+
+const enhanceCloseAirportsValidation = (): void => {
+  const table = Array.from(document.querySelectorAll<HTMLTableElement>('table')).find((candidate) =>
+    getTextContent(candidate.querySelector('th')).includes('Close Airports'),
+  );
+  if (!table) {
+    return;
+  }
+
+  const rows = Array.from(table.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+  rows.forEach((row) => {
+    const airportCell = row.querySelectorAll<HTMLTableCellElement>('td')[0];
+    if (!airportCell || airportCell.querySelector('.fset-close-airport-validation')) {
+      return;
+    }
+
+    const airportLinks = Array.from(airportCell.querySelectorAll<HTMLAnchorElement>('a'));
+    const airportLink = airportLinks.find((link) => /airport\.jsp\?icao=/i.test(link.getAttribute('href') ?? ''));
+    if (!airportLink) {
+      return;
+    }
+
+    const mapLink = airportLinks.find((link) => (link.getAttribute('onclick') ?? '').includes('showAssignmentMap('));
+    const airportDetails = mapLink ? parseMapLinkAirportDetails(mapLink) : null;
+
+    if (airportDetails) {
+      const validation = getMsfsValidation(airportDetails.icao, airportDetails.coordinates);
+      const summary = getValidationSummary(validation);
+      airportLink.insertAdjacentElement(
+        'afterend',
+        createValidationIndicator(summary, 'fset-close-airport-validation'),
+      );
+      return;
+    }
+
+    void getRemoteAirportValidationSummary(getTextContent(airportLink))
+      .then((result) => {
+        if (!result || airportCell.querySelector('.fset-close-airport-validation')) {
+          return;
+        }
+
+        airportLink.insertAdjacentElement(
+          'afterend',
+          createValidationIndicator(result.summary, 'fset-close-airport-validation'),
+        );
+      })
+      .catch(() => {
+        // Ignore per-row lookup failures to avoid interrupting the airport page.
+      });
   });
 };
 
@@ -816,9 +922,8 @@ const getDestinationValidationWarnings = (): Set<string> => {
   return destinationsWithWarnings;
 };
 
-const getAirportAssignments = (): AirportAssignment[] => {
-  const assignmentRows = Array.from(document.querySelectorAll<HTMLElement>('#jobTable > tbody > tr'));
-
+const getAirportAssignmentsFromRoot = (root: ParentNode): AirportAssignment[] => {
+  const assignmentRows = Array.from(root.querySelectorAll<HTMLElement>('#jobTable > tbody > tr'));
   return assignmentRows
     .map((row): AirportAssignment | null => {
       const cells = extractTableCellValuesFromRow(row);
@@ -852,6 +957,54 @@ const getAirportAssignments = (): AirportAssignment[] => {
       };
     })
     .filter((assignment): assignment is AirportAssignment => assignment !== null);
+};
+
+const getAirportAssignments = (): AirportAssignment[] => getAirportAssignmentsFromRoot(document);
+
+const fetchAssignmentsForAirport = async (
+  icao: string,
+): Promise<{ assignments: AirportAssignment[]; hasMsfsValidationIssue: boolean }> => {
+  const response = await fetch(`/airport.jsp?icao=${encodeURIComponent(icao)}`);
+  const html = await response.text();
+  const dom = new DOMParser().parseFromString(html, 'text/html');
+  const airportRoot = findAirportRootInDocument(dom);
+  const coordinatesElement = airportRoot ? findCoordinatesElement(airportRoot) : null;
+  const coordinates = coordinatesElement ? parseAirportCoordinates(getTextContent(coordinatesElement)) : null;
+  const hasMsfsValidationIssue = coordinates ? hasValidationWarning(getMsfsValidation(icao, coordinates)) : true;
+
+  return {
+    assignments: getAirportAssignmentsFromRoot(dom),
+    hasMsfsValidationIssue,
+  };
+};
+
+const fetchNearbyAirportAssignments = async (
+  nearestAirports: Array<{ icao: string; distanceNm: number | null }>,
+): Promise<NearbyAirportFetchOutcome> => {
+  const fetchedAirports = await Promise.all(
+    nearestAirports.map(async (airport) => ({
+      icao: airport.icao,
+      distanceNm: airport.distanceNm,
+      ...(await fetchAssignmentsForAirport(airport.icao)),
+    })),
+  );
+
+  return fetchedAirports.reduce<NearbyAirportFetchOutcome>(
+    (outcome, airport) => {
+      if (airport.hasMsfsValidationIssue) {
+        outcome.excludedAirports.push(airport.icao);
+        return outcome;
+      }
+
+      outcome.validResults.push({
+        icao: airport.icao,
+        distanceNm: airport.distanceNm,
+        assignments: airport.assignments,
+      });
+      return outcome;
+    },
+    { validResults: [], excludedAirports: [] },
+  );
 };
 
 const getAirportAssignmentForm = (): HTMLFormElement | null => {
@@ -1180,6 +1333,39 @@ const createDispatchSummarySection = (
   content.style.marginTop = '10px';
   section.append(content);
 
+  let nearbyAirportResults: NearbyAirportDispatchResult[] = [];
+  let isLoadingNearbyAirports = false;
+  let nearbyAirportsError: string | null = null;
+  let excludedNearbyAirports: string[] = [];
+
+  const nearbyControlsRow = createFormRow();
+  nearbyControlsRow.style.marginTop = '0';
+  const nearbyAirportsButton = createButton('Fetch nearby airport jobs', () => {
+    if (isLoadingNearbyAirports || nearestAirports.length === 0) {
+      return;
+    }
+
+    isLoadingNearbyAirports = true;
+    nearbyAirportsError = null;
+    excludedNearbyAirports = [];
+    render();
+
+    void fetchNearbyAirportAssignments(nearestAirports)
+      .then((outcome) => {
+        nearbyAirportResults = outcome.validResults;
+        excludedNearbyAirports = outcome.excludedAirports;
+      })
+      .catch((error: unknown) => {
+        nearbyAirportsError = error instanceof Error ? error.message : 'Unable to fetch nearby airport jobs.';
+      })
+      .finally(() => {
+        isLoadingNearbyAirports = false;
+        render();
+      });
+  });
+  nearbyControlsRow.append(nearbyAirportsButton);
+  section.append(nearbyControlsRow);
+
   const render = () => {
     const filteredAssignments = getFilteredAssignments(assignments, filters);
     const destinationSummaries = getDestinationSummaries(filteredAssignments, filters);
@@ -1247,7 +1433,96 @@ const createDispatchSummarySection = (
       notes.append(createEmptyState('No obvious dispatch signal was found for the current filters.'));
     }
 
-    content.replaceChildren(metrics, notes);
+    const nearbyAirportList = createList();
+    if (nearestAirports.length === 0) {
+      nearbyAirportList.append(createEmptyState('No nearby airports were found in the Close Airports table.'));
+    } else if (isLoadingNearbyAirports) {
+      nearbyAirportList.append(
+        createEmptyState(`Loading assignments for ${nearestAirports.length} nearby airport${nearestAirports.length === 1 ? '' : 's'}...`),
+      );
+    } else if (nearbyAirportsError) {
+      nearbyAirportList.append(createWarningItem(nearbyAirportsError));
+    } else if (nearbyAirportResults.length > 0) {
+      const sortedNearbyAirportResults = [...nearbyAirportResults].sort((left, right) => {
+        const leftAssignments = getFilteredAssignments(left.assignments, filters);
+        const rightAssignments = getFilteredAssignments(right.assignments, filters);
+        const leftBestTotalPay = getTopDestinationSummary(getDestinationSummaries(leftAssignments, filters), 'totalPay');
+        const rightBestTotalPay = getTopDestinationSummary(getDestinationSummaries(rightAssignments, filters), 'totalPay');
+        const leftBestPay = leftBestTotalPay?.totalPay ?? 0;
+        const rightBestPay = rightBestTotalPay?.totalPay ?? 0;
+
+        if (rightBestPay !== leftBestPay) {
+          return rightBestPay - leftBestPay;
+        }
+
+        return left.icao.localeCompare(right.icao);
+      });
+
+      sortedNearbyAirportResults.forEach((airportResult) => {
+        const airportAssignments = getFilteredAssignments(airportResult.assignments, filters);
+        const airportDestinationSummaries = getDestinationSummaries(airportAssignments, filters);
+        const airportBestTotalPayJob = getTopDestinationSummary(airportDestinationSummaries, 'totalPay');
+        const airportBestPayPerMileJob = getTopDestinationSummary(airportDestinationSummaries, 'payPerNm');
+        const distanceSuffix =
+          airportResult.distanceNm != null ? ` • ${airportResult.distanceNm.toFixed(1).replace(/\.0$/, '')} NM away` : '';
+
+        if (!airportBestTotalPayJob && !airportBestPayPerMileJob) {
+          nearbyAirportList.append(
+            createSummaryRow(
+              `${airportResult.icao}${distanceSuffix}`,
+              'No assignments match the current dispatch filters.',
+              `/airport.jsp?icao=${airportResult.icao}`,
+            ),
+          );
+          return;
+        }
+
+        if (airportBestTotalPayJob) {
+          nearbyAirportList.append(
+            createSummaryRow(
+              `${airportResult.icao}${distanceSuffix} • Best total pay job`,
+              `${airportBestTotalPayJob.destination} • ${formatCurrency(airportBestTotalPayJob.totalPay)} • ${airportBestTotalPayJob.distanceNm} NM • ${formatSelectedPayload(airportBestTotalPayJob.selectedAssignments)} • ${airportBestTotalPayJob.assignmentCount} job${airportBestTotalPayJob.assignmentCount === 1 ? '' : 's'}`,
+              `/airport.jsp?icao=${airportResult.icao}`,
+            ),
+          );
+        }
+
+        if (airportBestPayPerMileJob) {
+          nearbyAirportList.append(
+            createSummaryRow(
+              `${airportResult.icao}${distanceSuffix} • Best pay per mile job`,
+              `${airportBestPayPerMileJob.destination} • ${formatCurrency(getPayPerNm(airportBestPayPerMileJob))}/NM • ${formatCurrency(airportBestPayPerMileJob.totalPay)} • ${airportBestPayPerMileJob.distanceNm} NM • ${formatSelectedPayload(airportBestPayPerMileJob.selectedAssignments)} • ${airportBestPayPerMileJob.assignmentCount} job${airportBestPayPerMileJob.assignmentCount === 1 ? '' : 's'}`,
+              `/airport.jsp?icao=${airportResult.icao}`,
+            ),
+          );
+        }
+      });
+    } else {
+      nearbyAirportList.append(createEmptyState('Fetch nearby airport jobs to compare alternate departure fields.'));
+    }
+
+    const nearbySection = createList();
+    const nearbyHeading = document.createElement('div');
+    nearbyHeading.textContent = 'Nearby airport alternatives';
+    nearbyHeading.style.fontSize = '13px';
+    nearbyHeading.style.fontWeight = '700';
+    nearbyHeading.style.color = '#334155';
+    nearbyHeading.style.textTransform = 'uppercase';
+    nearbyHeading.style.letterSpacing = '0.04em';
+    nearbySection.append(nearbyHeading, nearbyAirportList);
+
+    if (excludedNearbyAirports.length > 0) {
+      nearbySection.append(
+        createWarningItem(
+          `Excluded ${excludedNearbyAirports.length} nearby airport${excludedNearbyAirports.length === 1 ? '' : 's'} with MSFS 2020 validation issues.`,
+        ),
+      );
+    }
+
+    nearbyAirportsButton.disabled = isLoadingNearbyAirports || nearestAirports.length === 0;
+    nearbyAirportsButton.textContent = isLoadingNearbyAirports ? 'Fetching nearby airport jobs...' : 'Fetch nearby airport jobs';
+
+    content.replaceChildren(metrics, notes, nearbySection);
   };
 
   const syncSelectedAssignmentTypes = () => {
@@ -1364,6 +1639,7 @@ export const enhanceAirport = () => {
 
   airportHelpersAnchor.insertAdjacentElement('afterend', panel);
   enhanceJobTableDestinationValidation();
+  enhanceCloseAirportsValidation();
 };
 
 export const airportEnhancer: SiteEnhancerDefinition = {
