@@ -424,9 +424,18 @@ const createList = (): HTMLDivElement => {
   return list;
 };
 
+const createAirportHref = (icao: string): string => `${AIRPORT_PATHNAME}?icao=${encodeURIComponent(icao)}`;
+
+const createAirportLink = (icao: string): HTMLAnchorElement => {
+  const link = document.createElement('a');
+  link.href = createAirportHref(icao);
+  link.textContent = icao;
+  return link;
+};
+
 const createSummaryRow = (
   title: string,
-  details: string,
+  details: string | Node,
   href?: string,
   action?: {
     label: string;
@@ -464,7 +473,11 @@ const createSummaryRow = (
   content.append(titleElement);
 
   const detailsElement = document.createElement('div');
-  detailsElement.textContent = details;
+  if (typeof details === 'string') {
+    detailsElement.textContent = details;
+  } else {
+    detailsElement.append(details);
+  }
   detailsElement.style.marginTop = '4px';
   detailsElement.style.color = '#475569';
   detailsElement.style.fontSize = '13px';
@@ -509,6 +522,15 @@ const formatSelectedPayload = (assignments: AirportAssignment[]): string => {
     return `${passengerPayload} pax`;
   }
   return `${cargoPayload} kg`;
+};
+
+const createDispatchSummaryDetails = (
+  destination: string,
+  summaryText: string,
+): DocumentFragment => {
+  const details = document.createDocumentFragment();
+  details.append(createAirportLink(destination), ` • ${summaryText}`);
+  return details;
 };
 
 const createLinkRow = (label: string, href: string): HTMLDivElement => {
@@ -1393,7 +1415,10 @@ const createDispatchSummarySection = (
       notes.append(
         createSummaryRow(
           'Best total pay job',
-          `${bestTotalPayJob.destination} • ${formatCurrency(bestTotalPayJob.totalPay)} • ${bestTotalPayJob.distanceNm} NM • ${formatSelectedPayload(bestTotalPayJob.selectedAssignments)} • ${bestTotalPayJob.assignmentCount} job${bestTotalPayJob.assignmentCount === 1 ? '' : 's'}`,
+          createDispatchSummaryDetails(
+            bestTotalPayJob.destination,
+            `${formatCurrency(bestTotalPayJob.totalPay)} • ${bestTotalPayJob.distanceNm} NM • ${formatSelectedPayload(bestTotalPayJob.selectedAssignments)} • ${bestTotalPayJob.assignmentCount} job${bestTotalPayJob.assignmentCount === 1 ? '' : 's'}`,
+          ),
           undefined,
           {
             label: 'Load to My Flight',
@@ -1407,7 +1432,10 @@ const createDispatchSummarySection = (
       notes.append(
         createSummaryRow(
           'Best pay per mile job',
-          `${bestPayPerMileJob.destination} • ${formatCurrency(getPayPerNm(bestPayPerMileJob))}/NM • ${formatCurrency(bestPayPerMileJob.totalPay)} • ${bestPayPerMileJob.distanceNm} NM • ${formatSelectedPayload(bestPayPerMileJob.selectedAssignments)} • ${bestPayPerMileJob.assignmentCount} job${bestPayPerMileJob.assignmentCount === 1 ? '' : 's'}`,
+          createDispatchSummaryDetails(
+            bestPayPerMileJob.destination,
+            `${formatCurrency(getPayPerNm(bestPayPerMileJob))}/NM • ${formatCurrency(bestPayPerMileJob.totalPay)} • ${bestPayPerMileJob.distanceNm} NM • ${formatSelectedPayload(bestPayPerMileJob.selectedAssignments)} • ${bestPayPerMileJob.assignmentCount} job${bestPayPerMileJob.assignmentCount === 1 ? '' : 's'}`,
+          ),
           undefined,
           {
             label: 'Load to My Flight',
@@ -1503,7 +1531,7 @@ const createDispatchSummarySection = (
         .forEach((row) => {
           const distanceSuffix = row.distanceNm != null ? ` • ${row.distanceNm.toFixed(1).replace(/\.0$/, '')} NM away` : '';
           nearbyAirportList.append(
-            createSummaryRow(`${row.icao}${distanceSuffix} • ${row.titleSuffix}`, row.details, `/airport.jsp?icao=${row.icao}`),
+            createSummaryRow(`${row.icao}${distanceSuffix} • ${row.titleSuffix}`, row.details, createAirportHref(row.icao)),
           );
         });
 
