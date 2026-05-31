@@ -5,6 +5,16 @@ export interface ParsedAirportCoordinates {
   googleMapsCenter: string;
 }
 
+export interface CoordinatePair {
+  latitude: number;
+  longitude: number;
+}
+
+export interface CoordinateDifference {
+  latitude: number;
+  longitude: number;
+}
+
 const coordinatePattern = /Lat:\s*([0-9.]+)\s*([NS])\s*,?\s*Long:\s*([0-9.]+)\s*([EW])/i;
 
 export const parseAirportCoordinates = (value: string): ParsedAirportCoordinates | null => {
@@ -27,4 +37,21 @@ export const parseAirportCoordinates = (value: string): ParsedAirportCoordinates
     msfs: `${matches[1]}${matches[2].toUpperCase()}, ${matches[3]}${matches[4].toUpperCase()}`,
     googleMapsCenter: `${latitude}%2C${longitude}`,
   };
+};
+
+export const getCoordinateDifference = (
+  first: CoordinatePair,
+  second: CoordinatePair,
+): CoordinateDifference => ({
+  latitude: Math.abs(first.latitude - second.latitude),
+  longitude: Math.abs(first.longitude - second.longitude),
+});
+
+export const areCoordinatesNear = (
+  first: CoordinatePair,
+  second: CoordinatePair,
+  tolerance: number,
+): boolean => {
+  const difference = getCoordinateDifference(first, second);
+  return difference.latitude <= tolerance && difference.longitude <= tolerance;
 };

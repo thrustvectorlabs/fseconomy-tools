@@ -1,7 +1,7 @@
 import { airportsWithoutIcao, nonExistingAirports } from '../data/airportMap';
 import msfs2020Airports from '../data/msfs-2020-airports.json';
 import { extractPayload } from '../utils/assignments';
-import { parseAirportCoordinates } from '../utils/coordinates';
+import { areCoordinatesNear, getCoordinateDifference, parseAirportCoordinates } from '../utils/coordinates';
 import { findFirstElementByText, getTextContent } from '../utils/dom';
 import { extractTableCellValuesFromRow } from '../utils/extractTableCellValuesFromRow';
 import { getCorrectedAirportForIcao } from '../utils/airport';
@@ -10,7 +10,7 @@ import { SiteEnhancerDefinition } from './types';
 const ENHANCER_ID = 'fset-airport-enhancer';
 const AIRPORT_PATHNAME = '/airport.jsp';
 const MY_FLIGHT_PATHNAME = '/myflight.jsp';
-const MSFS_COORDINATE_PRECISION = 100;
+const MSFS_COORDINATE_MATCH_TOLERANCE = 0.01;
 
 type Msfs2020Airport = {
   ident: string;
@@ -580,16 +580,16 @@ const createMessageRow = (message: string): HTMLDivElement => {
   return row;
 };
 
-const truncateCoordinate = (value: number): number =>
-  Math.trunc(value * MSFS_COORDINATE_PRECISION) / MSFS_COORDINATE_PRECISION;
-
-const formatCoordinateForTooltip = (value: number): string => truncateCoordinate(value).toFixed(3);
+const formatCoordinateForTooltip = (value: number): string => value.toFixed(3);
 
 const findRenamedMsfsAirport = (coordinates: { latitude: number; longitude: number }): Msfs2020Airport | null => {
-  const fseLatitude = truncateCoordinate(coordinates.latitude);
-  const fseLongitude = truncateCoordinate(coordinates.longitude);
   const matches = (msfs2020Airports as Msfs2020Airport[]).filter(
-    (airport) => truncateCoordinate(airport.laty) === fseLatitude && truncateCoordinate(airport.lonx) === fseLongitude,
+    (airport) =>
+      areCoordinatesNear(
+        coordinates,
+        { latitude: airport.laty, longitude: airport.lonx },
+        MSFS_COORDINATE_MATCH_TOLERANCE,
+      ),
   );
 
   return matches.length === 1 ? matches[0] : null;
@@ -621,17 +621,15 @@ const getMsfsValidation = (
     };
   }
 
-  const fseLatitude = truncateCoordinate(coordinates.latitude);
-  const fseLongitude = truncateCoordinate(coordinates.longitude);
-  const msfsLatitude = truncateCoordinate(airport.laty);
-  const msfsLongitude = truncateCoordinate(airport.lonx);
-  const coordinatesMatch = fseLatitude === msfsLatitude && fseLongitude === msfsLongitude;
+  const msfsCoordinates = { latitude: airport.laty, longitude: airport.lonx };
+  const difference = getCoordinateDifference(coordinates, msfsCoordinates);
+  const coordinatesMatch = areCoordinatesNear(coordinates, msfsCoordinates, MSFS_COORDINATE_MATCH_TOLERANCE);
 
   const coordinateStatus: ValidationStatus = coordinatesMatch
     ? { ok: true }
     : {
         ok: false,
-        message: `FSE ${formatCoordinateForTooltip(coordinates.latitude)}, ${formatCoordinateForTooltip(coordinates.longitude)} vs MSFS ${formatCoordinateForTooltip(airport.laty)}, ${formatCoordinateForTooltip(airport.lonx)}.`,
+        message: `FSE ${formatCoordinateForTooltip(coordinates.latitude)}, ${formatCoordinateForTooltip(coordinates.longitude)} vs MSFS ${formatCoordinateForTooltip(airport.laty)}, ${formatCoordinateForTooltip(airport.lonx)} (delta lat ${difference.latitude.toFixed(3)}, lon ${difference.longitude.toFixed(3)}).`,
       };
 
   return {
