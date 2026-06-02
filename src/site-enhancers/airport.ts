@@ -1659,12 +1659,6 @@ export const enhanceAirport = () => {
     return;
   }
 
-  const airportHelpersAnchor = findAirportHelpersAnchor();
-  if (!airportHelpersAnchor) {
-    console.warn('FSE Tools: airport helpers anchor not found.');
-    return;
-  }
-
   const airportInfoColumn = findAirportInfoColumn();
   if (airportInfoColumn) {
     airportInfoColumn.style.width = '100%';
@@ -1714,7 +1708,7 @@ export const enhanceAirport = () => {
   actionButtonsRow.append(...Array.from(mapsButtonRow.children), ...Array.from(copyButtonRow.children));
   panel.append(actionButtonsRow);
 
-  airportHelpersAnchor.insertAdjacentElement('afterend', panel);
+  airportRoot.insertAdjacentElement('afterend', panel);
   enhanceJobTableDestinationValidation();
   enhanceCloseAirportsValidation();
 };
