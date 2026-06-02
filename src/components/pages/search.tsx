@@ -7,6 +7,7 @@ import { StoreStatistics } from '../store-statistics/store-statistics';
 
 export const SearchPage = () => {
   const clearAssignmentsAndAircraft = useStore((state) => state.clearAssignmentsAndAircraft);
+  const isDevelopmentMode = useStore((state) => state.isDevelopmentMode);
   const setSearchFormParameters = useStore((state) => state.setSearchFormParameters);
 
   const onClickGetAllAircraftWithForm = async () => {
@@ -26,7 +27,7 @@ export const SearchPage = () => {
       maxDistanceBonus: distanceBonus,
     });
 
-    if (!config.developmentMode) {
+    if (!isDevelopmentMode) {
       clearAssignmentsAndAircraft();
     }
 
@@ -119,7 +120,7 @@ export const SearchPage = () => {
             >
               Search aircraft
             </button>
-            {config.developmentMode && (
+            {isDevelopmentMode && (
               <>
                 <button type="button" className="fset-button search-button" onClick={() => clearAssignmentsAndAircraft()}>
                   Clear store

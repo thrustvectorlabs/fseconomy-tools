@@ -704,6 +704,11 @@ const findAirportRootInDocument = (root: ParentNode): HTMLElement | null =>
 const findAirportHelpersAnchor = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('#mainContentDiv > div.row.clearfix > div.col-md-5');
 
+const findAirportInfoColumn = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>(
+    '#mainContentDiv > div.row.clearfix > div.col-md-5 > div > div > div:nth-child(1) > div:nth-child(2)',
+  );
+
 const findAirportHeaderRoot = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('div.panel-heading.airportInfo');
 
@@ -870,8 +875,27 @@ const enhanceCloseAirportsValidation = (): void => {
     return;
   }
 
-  const rows = Array.from(table.querySelectorAll<HTMLTableRowElement>('tbody tr'));
-  rows.forEach((row) => {
+  const closeAirportRows = Array.from(table.querySelectorAll<HTMLTableRowElement>('tbody tr'));
+  closeAirportRows.forEach((row) => {
+    const cells = row.querySelectorAll<HTMLTableCellElement>('td');
+    const airportCell = cells[0];
+    const distanceCell = cells[1];
+    const directionCell = cells[2];
+
+    if (airportCell) {
+      airportCell.style.width = '42%';
+    }
+
+    if (distanceCell) {
+      distanceCell.style.width = '29%';
+    }
+
+    if (directionCell) {
+      directionCell.style.width = '29%';
+    }
+  });
+
+  closeAirportRows.forEach((row) => {
     const airportCell = row.querySelectorAll<HTMLTableCellElement>('td')[0];
     if (!airportCell || airportCell.querySelector('.fset-close-airport-validation')) {
       return;
@@ -1639,6 +1663,12 @@ export const enhanceAirport = () => {
   if (!airportHelpersAnchor) {
     console.warn('FSE Tools: airport helpers anchor not found.');
     return;
+  }
+
+  const airportInfoColumn = findAirportInfoColumn();
+  if (airportInfoColumn) {
+    airportInfoColumn.style.width = '100%';
+    airportInfoColumn.style.maxWidth = 'none';
   }
 
   const coordinatesElement = findCoordinatesElement(airportRoot);

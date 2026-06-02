@@ -17,7 +17,7 @@ export const OpenToggle = () => {
       )}
       {!store.isOpen && (
         <button type="button" className="fset-open-toggle__button" onClick={handleOnCollapseButtonClick}>
-          <Badge />
+          <Badge showBuildVersion />
         </button>
       )}
     </div>

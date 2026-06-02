@@ -1,9 +1,9 @@
-import { config } from '../config';
 import { useStore } from '../store/store';
 import { Aircraft, Assignment } from '../types/types';
 import { extractPayload } from '../utils/assignments';
 import { extractTableCellValuesFromRow } from '../utils/extractTableCellValuesFromRow';
 import { getAircraftIdByName } from '../utils/getAircraft';
+import { config } from '../config';
 
 /** Local shared types for clarity */
 interface AirportData {
@@ -16,10 +16,10 @@ type PayloadUnit = 'pax' | 'kg';
 
 /** Dev-gated logger */
 const logInfo = (...args: unknown[]) => {
-  if (config.developmentMode) console.info(...args);
+  if (useStore.getState().isDevelopmentMode) console.info(...args);
 };
 const logWarn = (...args: unknown[]) => {
-  if (config.developmentMode) console.warn(...args);
+  if (useStore.getState().isDevelopmentMode) console.warn(...args);
 };
 
 /** Parsing helpers */
