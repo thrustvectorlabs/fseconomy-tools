@@ -1,7 +1,7 @@
 $panel-border: #b8c2cf;
 $line: #d6dde7;
 $text: #1f2933;
-$muted: #5f6c7b;
+$muted: #526174;
 $surface: #f3f6fa;
 $surface-alt: #e8edf3;
 $accent: #123a63;
@@ -11,6 +11,7 @@ $data-table-filter-height: 54px;
 
 #fset-container {
   font-family: 'Geist', sans-serif !important;
+  font-size: 15px;
   color: $text;
   position: fixed;
   z-index: 100000;
@@ -18,7 +19,7 @@ $data-table-filter-height: 54px;
   pointer-events: none;
 
   .fset-button {
-    font-size: 1em;
+    font-size: 15px;
     line-height: 1.25;
     padding: 10px 14px;
     border: 1px solid $panel-border;
@@ -38,6 +39,14 @@ $data-table-filter-height: 54px;
     &:hover {
       background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
       border-color: #8fa0b3;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      color: rgba(31, 41, 51, 0.58);
+      border-color: #c6d0db;
+      background: linear-gradient(180deg, #f6f8fb 0%, #edf2f7 100%);
+      transform: none;
     }
   }
 
@@ -180,10 +189,10 @@ $data-table-filter-height: 54px;
 
     .fset-form-section {
       border: 1px solid $line;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(241, 245, 249, 0.92) 100%);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 249, 252, 0.98) 100%);
       display: grid;
       gap: 18px;
-      padding: 18px;
+      padding: 20px;
 
       &--compact {
         gap: 14px;
@@ -198,18 +207,17 @@ $data-table-filter-height: 54px;
 
       &__title {
         margin: 0;
-        font-size: 1.15rem;
+        font-size: 18px;
         font-weight: 700;
         line-height: 1.2;
         color: $accent-strong;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: -0.01em;
       }
 
       &__subtitle {
         margin: 0;
-        font-size: 0.98rem;
-        line-height: 1.45;
+        font-size: 16px;
+        line-height: 1.55;
         color: $muted;
       }
     }
@@ -224,9 +232,35 @@ $data-table-filter-height: 54px;
       label {
         justify-self: end;
         font-weight: 700;
-        font-size: 1em;
+        font-size: 15px;
         color: $text;
       }
+    }
+
+    .fset-placeholder-copy {
+      display: grid;
+      gap: 12px;
+
+      p {
+        margin: 0;
+        color: $text;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+    }
+
+    .fset-placeholder-label {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: $muted;
+      text-transform: uppercase;
+    }
+
+    .fset-placeholder-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: $accent-strong;
     }
 
     select,
@@ -237,7 +271,7 @@ $data-table-filter-height: 54px;
       padding: 9px 11px;
       border: 1px solid $panel-border;
       background: #fff;
-      font-size: 1em;
+      font-size: 15px;
       color: $text;
       box-sizing: border-box;
 
@@ -249,7 +283,7 @@ $data-table-filter-height: 54px;
     }
 
     option {
-      font-size: 1em;
+      font-size: 15px;
     }
 
     .fset-search-actions {
@@ -264,28 +298,38 @@ $data-table-filter-height: 54px;
     .stats {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+      gap: 14px;
 
       h4 {
         grid-column: 1 / -1;
         margin: 0;
-        font-size: 0.92rem;
+        font-size: 13px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: $muted;
       }
 
-      div {
+      &__card {
         border: 1px solid $line;
-        background: $surface;
-        padding: 12px;
-        font-size: 0.98rem;
+        background: linear-gradient(180deg, #f9fbfd 0%, #f1f5f9 100%);
+        padding: 14px 16px;
+        font-size: 15px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
       }
 
-      strong {
-        font-size: 1.15rem;
+      &__label {
+        color: $text;
+        font-weight: 600;
+      }
+
+      &__value {
+        font-size: 16px;
         color: $accent-strong;
+        font-weight: 700;
       }
     }
 
@@ -324,11 +368,11 @@ $data-table-filter-height: 54px;
 
       th,
       td {
-        padding: 0.72rem 0.9rem;
+        padding: 12px 14px;
         text-align: left;
         border-bottom: 1px solid $line;
         vertical-align: top;
-        font-size: 1.4rem;
+        font-size: 15px;
       }
 
       th {
@@ -359,7 +403,7 @@ $data-table-filter-height: 54px;
     }
 
     .data-table__sort-indicator {
-      font-size: 0.8em;
+      font-size: 13px;
       color: $highlight;
     }
 
@@ -372,7 +416,7 @@ $data-table-filter-height: 54px;
       min-width: 90px;
       min-height: 30px;
       padding: 4px 6px;
-      font-size: 0.8em;
+      font-size: 13px;
       border: 1px solid #b6c2cf;
       background: #fff;
     }
@@ -380,7 +424,7 @@ $data-table-filter-height: 54px;
     .fset-tab-header {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 12px;
       flex: 0 0 auto;
       padding: 22px 22px 18px;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(243, 247, 251, 0.96) 100%);
@@ -390,18 +434,18 @@ $data-table-filter-height: 54px;
         display: flex;
         align-items: flex-end;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 16px;
       }
 
       &__copy {
         display: flex;
         flex-direction: column;
-        gap: 0.45rem;
+        gap: 7px;
       }
 
       &__title {
         margin: 0;
-        font-size: 2rem;
+        font-size: 26px;
         line-height: 1.1;
         font-weight: 700;
         color: $accent-strong;
@@ -410,8 +454,8 @@ $data-table-filter-height: 54px;
 
       &__subtitle {
         margin: 0;
-        max-width: 54rem;
-        font-size: 1rem;
+        max-width: 864px;
+        font-size: 15px;
         line-height: 1.5;
         color: $muted;
       }
@@ -419,31 +463,31 @@ $data-table-filter-height: 54px;
       &__actions {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 12px;
       }
     }
 
     .debug-page {
-      padding: 0 0 2rem;
-      font-size: 1.2rem;
+      padding: 0 0 32px;
+      font-size: 19px;
 
       &__summary {
         display: grid;
-        gap: 0.75rem;
-        margin: 0 0 1.5rem;
-        padding: 1rem;
+        gap: 12px;
+        margin: 0 0 24px;
+        padding: 16px;
         background: $surface;
         border: 1px solid $line;
       }
 
       &__output {
         margin: 0;
-        padding: 1rem;
+        padding: 16px;
         background: #16202c;
         color: #e5eef9;
         border: 1px solid #25374a;
         overflow: auto;
-        font-size: 1.1rem;
+        font-size: 18px;
         line-height: 1.5;
       }
     }
@@ -502,7 +546,7 @@ $data-table-filter-height: 54px;
       border-left: 4px solid transparent;
       background: transparent;
       padding: 17px 20px 17px 22px;
-      font-size: 1.4rem;
+      font-size: 15px;
       color: rgba(255, 255, 255, 0.84);
       text-align: left;
       cursor: pointer;
@@ -523,7 +567,7 @@ $data-table-filter-height: 54px;
 
     &__count {
       color: rgba(255, 255, 255, 0.72);
-      font-size: 0.92em;
+      font-size: 13px;
       white-space: nowrap;
     }
 
@@ -532,43 +576,13 @@ $data-table-filter-height: 54px;
       background: rgba(255, 255, 255, 0.06);
       color: #fff;
       padding: 13px 14px;
-      font-size: 1em;
+      font-size: 15px;
       cursor: pointer;
       text-align: left;
 
       &:hover {
         background: rgba(255, 255, 255, 0.12);
       }
-    }
-  }
-
-  .consolidated-filters {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    align-items: end;
-    padding: 16px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(241, 245, 249, 0.92) 100%);
-    border: 1px solid $line;
-    margin-bottom: 16px;
-    font-size: 1em;
-
-    &__group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-
-      label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: $text;
-      }
-    }
-
-    &__label {
-      font-size: 1rem;
-      font-weight: 700;
-      color: $text;
     }
   }
 
@@ -659,10 +673,6 @@ $data-table-filter-height: 54px;
       label {
         justify-self: start;
       }
-    }
-
-    .consolidated-filters {
-      grid-template-columns: 1fr;
     }
 
     .stats {
