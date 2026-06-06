@@ -39,19 +39,12 @@ export const parseAirportCoordinates = (value: string): ParsedAirportCoordinates
   };
 };
 
-export const getCoordinateDifference = (
-  first: CoordinatePair,
-  second: CoordinatePair,
-): CoordinateDifference => ({
+export const getCoordinateDifference = (first: CoordinatePair, second: CoordinatePair): CoordinateDifference => ({
   latitude: Math.abs(first.latitude - second.latitude),
   longitude: Math.abs(first.longitude - second.longitude),
 });
 
-export const areCoordinatesNear = (
-  first: CoordinatePair,
-  second: CoordinatePair,
-  tolerance: number,
-): boolean => {
+export const areCoordinatesNear = (first: CoordinatePair, second: CoordinatePair, tolerance: number): boolean => {
   const difference = getCoordinateDifference(first, second);
   return difference.latitude <= tolerance && difference.longitude <= tolerance;
 };

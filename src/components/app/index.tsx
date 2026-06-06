@@ -54,7 +54,9 @@ export const App = () => {
   }
 
   return (
-    <div className={`fset-shell${store.isOpen ? ' fset-shell--open' : ''}${isFullscreen ? ' fset-shell--fullscreen' : ''}`}>
+    <div
+      className={`fset-shell${store.isOpen ? ' fset-shell--open' : ''}${isFullscreen ? ' fset-shell--fullscreen' : ''}`}
+    >
       {store.isOpen ? (
         <div id="fset-tools-menu">
           <div className="fset-tools-menu__frame">

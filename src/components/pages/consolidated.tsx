@@ -25,7 +25,7 @@ export const ConsolidatedPage = () => {
 
     const allSummaries = uniqueAirports.map((airport) => {
       const perPaxAssignments = assignments.filter(
-        (assignment) => assignment.origin === airport && assignment.payloadUnit === 'pax'
+        (assignment) => assignment.origin === airport && assignment.payloadUnit === 'pax',
       );
 
       const uniqueDestinations = [...new Set(perPaxAssignments.map((a) => a.destination))];
@@ -36,8 +36,12 @@ export const ConsolidatedPage = () => {
             .filter((a) => a.destination === destination)
             .sort((a, b) => b.pay - a.pay);
 
-          const combinableAssignments = destAssignments.filter((assignment) => !isExclusiveAssignmentType(assignment.assignmentType));
-          const exclusiveAssignments = destAssignments.filter((assignment) => isExclusiveAssignmentType(assignment.assignmentType));
+          const combinableAssignments = destAssignments.filter(
+            (assignment) => !isExclusiveAssignmentType(assignment.assignmentType),
+          );
+          const exclusiveAssignments = destAssignments.filter((assignment) =>
+            isExclusiveAssignmentType(assignment.assignmentType),
+          );
 
           let accumulatedPassengers = 0;
           const selectedCombinable: Assignment[] = [];
@@ -82,7 +86,7 @@ export const ConsolidatedPage = () => {
           totalPay: 0,
           passengerCount: 0,
           assignments: [] as Assignment[],
-        }
+        },
       );
     });
 

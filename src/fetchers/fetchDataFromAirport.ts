@@ -110,8 +110,10 @@ const getAircraftData = (dom: Document, icao: string, aircraftModelId: number): 
       const registration = getOptionalCell(cells, 0)?.replace('*', '').trim();
       const type = getOptionalCell(cells, 1)?.trim();
       const homeIcao =
-        aircraftRow.querySelectorAll('td')[3]?.querySelector<HTMLAnchorElement>('a[href*="airport.jsp?icao="]')?.textContent?.trim() ??
-        getOptionalCell(cells, 3)?.trim();
+        aircraftRow
+          .querySelectorAll('td')[3]
+          ?.querySelector<HTMLAnchorElement>('a[href*="airport.jsp?icao="]')
+          ?.textContent?.trim() ?? getOptionalCell(cells, 3)?.trim();
       const bonusCell = getOptionalCell(cells, 4) ?? '';
       const priceCell = aircraftRow.querySelectorAll('td')[5];
 

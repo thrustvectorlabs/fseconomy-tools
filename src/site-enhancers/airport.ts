@@ -261,9 +261,7 @@ const getValidationSummary = (validation: MsfsValidationResult): { icon: string;
     validation.icaoStatus.ok
       ? `${validation.airport?.ident ?? 'ICAO'} exists in MSFS 2020`
       : validation.icaoStatus.message,
-    validation.coordinateStatus.ok
-      ? 'Position matches MSFS 2020 to 2 decimals'
-      : validation.coordinateStatus.message,
+    validation.coordinateStatus.ok ? 'Position matches MSFS 2020 to 2 decimals' : validation.coordinateStatus.message,
   ];
 
   if (validation.renamedAirport) {
@@ -524,10 +522,7 @@ const formatSelectedPayload = (assignments: AirportAssignment[]): string => {
   return `${cargoPayload} kg`;
 };
 
-const createDispatchSummaryDetails = (
-  destination: string,
-  summaryText: string,
-): DocumentFragment => {
+const createDispatchSummaryDetails = (destination: string, summaryText: string): DocumentFragment => {
   const details = document.createDocumentFragment();
   details.append(createAirportLink(destination), ` • ${summaryText}`);
   return details;
@@ -606,13 +601,12 @@ const createMessageRow = (message: string): HTMLDivElement => {
 const formatCoordinateForTooltip = (value: number): string => value.toFixed(3);
 
 const findRenamedMsfsAirport = (coordinates: { latitude: number; longitude: number }): Msfs2020Airport | null => {
-  const matches = (msfs2020Airports as Msfs2020Airport[]).filter(
-    (airport) =>
-      areCoordinatesNear(
-        coordinates,
-        { latitude: airport.laty, longitude: airport.lonx },
-        MSFS_COORDINATE_MATCH_TOLERANCE,
-      ),
+  const matches = (msfs2020Airports as Msfs2020Airport[]).filter((airport) =>
+    areCoordinatesNear(
+      coordinates,
+      { latitude: airport.laty, longitude: airport.lonx },
+      MSFS_COORDINATE_MATCH_TOLERANCE,
+    ),
   );
 
   return matches.length === 1 ? matches[0] : null;
@@ -802,7 +796,10 @@ const getNearestAirports = () => {
     .filter((airport): airport is NonNullable<typeof airport> => airport !== null);
 };
 
-const createValidationIndicator = (summary: { icon: string; color: string; tooltip: string }, className: string): HTMLSpanElement => {
+const createValidationIndicator = (
+  summary: { icon: string; color: string; tooltip: string },
+  className: string,
+): HTMLSpanElement => {
   const icon = document.createElement('span');
   icon.className = className;
   icon.textContent = summary.icon;
@@ -827,7 +824,9 @@ const enhanceJobTableDestinationValidation = (): void => {
     }
 
     const destinationLinks = Array.from(destinationCell.querySelectorAll<HTMLAnchorElement>('a'));
-    const mapLink = destinationLinks.find((link) => (link.getAttribute('onclick') ?? '').includes('showAssignmentMap('));
+    const mapLink = destinationLinks.find((link) =>
+      (link.getAttribute('onclick') ?? '').includes('showAssignmentMap('),
+    );
     const airportLink = destinationLinks.find((link) => /airport\.jsp\?icao=/i.test(link.getAttribute('href') ?? ''));
 
     if (!mapLink || !airportLink) {
@@ -948,7 +947,9 @@ const getDestinationValidationWarnings = (): Set<string> => {
     }
 
     const destinationLinks = Array.from(destinationCell.querySelectorAll<HTMLAnchorElement>('a'));
-    const mapLink = destinationLinks.find((link) => (link.getAttribute('onclick') ?? '').includes('showAssignmentMap('));
+    const mapLink = destinationLinks.find((link) =>
+      (link.getAttribute('onclick') ?? '').includes('showAssignmentMap('),
+    );
     if (!mapLink) {
       return;
     }
@@ -1053,7 +1054,9 @@ const fetchNearbyAirportAssignments = async (
 };
 
 const getAirportAssignmentForm = (): HTMLFormElement | null => {
-  const firstAssignmentCheckbox = document.querySelector<HTMLInputElement>('#jobTable input[type="checkbox"][name="select"]');
+  const firstAssignmentCheckbox = document.querySelector<HTMLInputElement>(
+    '#jobTable input[type="checkbox"][name="select"]',
+  );
   if (firstAssignmentCheckbox?.form) {
     return firstAssignmentCheckbox.form;
   }
@@ -1447,7 +1450,9 @@ const createDispatchSummarySection = (
           {
             label: 'Load to My Flight',
             onClick: () =>
-              submitAssignmentsToMyFlight(bestTotalPayJob.selectedAssignments.map((assignment) => assignment.assignmentId)),
+              submitAssignmentsToMyFlight(
+                bestTotalPayJob.selectedAssignments.map((assignment) => assignment.assignmentId),
+              ),
           },
         ),
       );
@@ -1464,7 +1469,9 @@ const createDispatchSummarySection = (
           {
             label: 'Load to My Flight',
             onClick: () =>
-              submitAssignmentsToMyFlight(bestPayPerMileJob.selectedAssignments.map((assignment) => assignment.assignmentId)),
+              submitAssignmentsToMyFlight(
+                bestPayPerMileJob.selectedAssignments.map((assignment) => assignment.assignmentId),
+              ),
           },
         ),
       );
@@ -1496,7 +1503,9 @@ const createDispatchSummarySection = (
       nearbyAirportList.append(createEmptyState('No nearby airports were found in the Close Airports table.'));
     } else if (isLoadingNearbyAirports) {
       nearbyAirportList.append(
-        createEmptyState(`Loading assignments for ${nearestAirports.length} nearby airport${nearestAirports.length === 1 ? '' : 's'}...`),
+        createEmptyState(
+          `Loading assignments for ${nearestAirports.length} nearby airport${nearestAirports.length === 1 ? '' : 's'}...`,
+        ),
       );
     } else if (nearbyAirportsError) {
       nearbyAirportList.append(createWarningItem(nearbyAirportsError));
@@ -1553,9 +1562,14 @@ const createDispatchSummarySection = (
           return left.titleSuffix.localeCompare(right.titleSuffix);
         })
         .forEach((row) => {
-          const distanceSuffix = row.distanceNm != null ? ` • ${row.distanceNm.toFixed(1).replace(/\.0$/, '')} NM away` : '';
+          const distanceSuffix =
+            row.distanceNm != null ? ` • ${row.distanceNm.toFixed(1).replace(/\.0$/, '')} NM away` : '';
           nearbyAirportList.append(
-            createSummaryRow(`${row.icao}${distanceSuffix} • ${row.titleSuffix}`, row.details, createAirportHref(row.icao)),
+            createSummaryRow(
+              `${row.icao}${distanceSuffix} • ${row.titleSuffix}`,
+              row.details,
+              createAirportHref(row.icao),
+            ),
           );
         });
 
@@ -1585,7 +1599,9 @@ const createDispatchSummarySection = (
     }
 
     nearbyAirportsButton.disabled = isLoadingNearbyAirports || nearestAirports.length === 0;
-    nearbyAirportsButton.textContent = isLoadingNearbyAirports ? 'Fetching nearby airport jobs...' : 'Fetch nearby airport jobs';
+    nearbyAirportsButton.textContent = isLoadingNearbyAirports
+      ? 'Fetching nearby airport jobs...'
+      : 'Fetch nearby airport jobs';
 
     content.replaceChildren(metrics, notes, nearbySection);
   };

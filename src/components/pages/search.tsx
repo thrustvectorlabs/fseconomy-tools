@@ -53,7 +53,9 @@ export const SearchPage = () => {
         <section className="fset-form-section">
           <div className="fset-form-section__header">
             <h2 className="fset-form-section__title">Aircraft and Departure</h2>
-            <p className="fset-form-section__subtitle">Choose the aircraft type and the airport used as the search origin.</p>
+            <p className="fset-form-section__subtitle">
+              Choose the aircraft type and the airport used as the search origin.
+            </p>
           </div>
           <div className="fset-form-grid">
             <label htmlFor="fse_tools_model">Aircraft Type</label>
@@ -87,7 +89,9 @@ export const SearchPage = () => {
         <section className="fset-form-section">
           <div className="fset-form-section__header">
             <h2 className="fset-form-section__title">Search Limits</h2>
-            <p className="fset-form-section__subtitle">Control search radius and how much extra distance premium is acceptable.</p>
+            <p className="fset-form-section__subtitle">
+              Control search radius and how much extra distance premium is acceptable.
+            </p>
           </div>
           <div className="fset-form-grid">
             <label htmlFor="fse_tools_distance">Radius</label>
@@ -122,7 +126,11 @@ export const SearchPage = () => {
             </button>
             {isDevelopmentMode && (
               <>
-                <button type="button" className="fset-button search-button" onClick={() => clearAssignmentsAndAircraft()}>
+                <button
+                  type="button"
+                  className="fset-button search-button"
+                  onClick={() => clearAssignmentsAndAircraft()}
+                >
                   Clear store
                 </button>
                 <button

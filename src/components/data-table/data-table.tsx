@@ -149,9 +149,7 @@ export const DataTable = <RowType extends object>({
                 <span className="data-table__heading">
                   <span>{column.label}</span>
                   {sortState?.columnKey === String(column.key) ? (
-                    <span className="data-table__sort-indicator">
-                      {sortState.direction === 'asc' ? '▲' : '▼'}
-                    </span>
+                    <span className="data-table__sort-indicator">{sortState.direction === 'asc' ? '▲' : '▼'}</span>
                   ) : null}
                 </span>
 

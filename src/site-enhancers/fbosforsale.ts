@@ -199,7 +199,9 @@ export const fbosForSaleEnhancer: SiteEnhancerDefinition = {
     const { fboTableElement, fboListingRows } = getFboElements();
     const listingCount = fboListingRows.length;
     const sampleRow = fboListingRows[0];
-    const sampleColumns = sampleRow ? Array.from(sampleRow.querySelectorAll('td')).map((cell) => cell.innerText.trim()) : [];
+    const sampleColumns = sampleRow
+      ? Array.from(sampleRow.querySelectorAll('td')).map((cell) => cell.innerText.trim())
+      : [];
 
     return {
       hasSummaryTable: document.body.innerText.includes("Summary: FBO's for sale"),
