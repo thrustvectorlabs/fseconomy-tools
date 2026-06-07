@@ -7,8 +7,6 @@ import { runSiteEnhancers } from './site-enhancers';
 
 function mountApp() {
   const containerId = 'fset-container';
-  const fontLinkId = 'fset-font-geist';
-  const headContainer = document.querySelector('head');
   let container = document.getElementById(containerId);
 
   const updateLayoutAnchors = () => {
@@ -27,13 +25,6 @@ function mountApp() {
     root.style.setProperty('--fset-launcher-right', `${launcherRight}px`);
     root.style.setProperty('--fset-drawer-top', `${drawerTop}px`);
   };
-
-  if (headContainer && !document.getElementById(fontLinkId)) {
-    headContainer.insertAdjacentHTML(
-      'beforeend',
-      `<link id="${fontLinkId}" rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">`,
-    );
-  }
 
   if (!container) {
     container = document.createElement('div');

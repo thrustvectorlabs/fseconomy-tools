@@ -1,5 +1,5 @@
 import { airportsWithoutIcao, nonExistingAirports } from '../data/airportMap';
-import msfs2020Airports from '../data/msfs-2020-airports.json';
+import msfs2020AirportsLite from '../data/msfs-2020-airports-lite.json';
 import { extractPayload } from '../utils/assignments';
 import { areCoordinatesNear, getCoordinateDifference, parseAirportCoordinates } from '../utils/coordinates';
 import { findFirstElementByText, getTextContent } from '../utils/dom';
@@ -16,8 +16,9 @@ type Msfs2020Airport = {
   ident: string;
   laty: number;
   lonx: number;
-  name: string;
 };
+
+type Msfs2020AirportTuple = [ident: string, latitude: number, longitude: number];
 
 type ValidationStatus =
   | { ok: true }
@@ -97,9 +98,13 @@ type NearbyAirportFetchOutcome = {
   excludedAirports: string[];
 };
 
-const msfsAirportByIdent = new Map(
-  (msfs2020Airports as Msfs2020Airport[]).map((airport) => [airport.ident.toUpperCase(), airport]),
-);
+const msfs2020Airports = (msfs2020AirportsLite as Msfs2020AirportTuple[]).map(([ident, laty, lonx]) => ({
+  ident,
+  laty,
+  lonx,
+}));
+
+const msfsAirportByIdent = new Map(msfs2020Airports.map((airport) => [airport.ident.toUpperCase(), airport]));
 
 const cleanCurrency = (value: string): string => value.replace(/[$,]/g, '').trim();
 
@@ -601,7 +606,7 @@ const createMessageRow = (message: string): HTMLDivElement => {
 const formatCoordinateForTooltip = (value: number): string => value.toFixed(3);
 
 const findRenamedMsfsAirport = (coordinates: { latitude: number; longitude: number }): Msfs2020Airport | null => {
-  const matches = (msfs2020Airports as Msfs2020Airport[]).filter((airport) =>
+  const matches = msfs2020Airports.filter((airport) =>
     areCoordinatesNear(
       coordinates,
       { latitude: airport.laty, longitude: airport.lonx },

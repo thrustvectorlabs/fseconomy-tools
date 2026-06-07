@@ -13,7 +13,7 @@ export const App = () => {
   const pageMetaById = {
     search: {
       title: 'FSE Tools (FSET)',
-      subtitle: 'Current build information and release status.',
+      subtitle: 'FSET is currently in development. Please leave your feedback on Discord or GitHub!',
       content: <SearchPage />,
     },
   } as const;

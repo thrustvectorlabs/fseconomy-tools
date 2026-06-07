@@ -28,6 +28,10 @@
     "zustand": "^5.0.14"
   },
   "scripts": {
+    "generate:msfs-2020-airports-lite": "node scripts/generate-msfs-2020-airports-lite.cjs",
+    "sync:userscript-version": "node scripts/sync-userscript-version.cjs",
+    "predev": "pnpm run sync:userscript-version",
+    "prebuild": "pnpm run sync:userscript-version",
     "dev": "webpack --mode=development --watch",
     "build": "webpack --mode=production",
     "tsc": "tsc",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FS Economy Tools
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      0.7.0
 // @description  fse-tools
 // @match        https://server.fseconomy.net/*
 // @author       You
