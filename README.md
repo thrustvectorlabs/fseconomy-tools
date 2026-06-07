@@ -2,28 +2,35 @@
 
 FSEconomy Tools (FSET) - unofficial enhancements for FSEconomy (server.fseconomy.net)
 
-# To install:
+# Install
 
-- Set up project
+- Install the published userscript from:
+  `https://raw.githubusercontent.com/thrustvectorlabs/fseconomy-tools/main/tampermonkey-script/script.js`
+- Load FSE Homepage and confirm the FSE Tools menu appears on the right.
 
+# Local development
+
+- Set up the project:
+
+```bash
+pnpm install
 ```
-$ pnpm install
-```
 
-- Add Tampermonkey Script to Chrome from `tampermonkey-script` (see instructions below)
-- Load FSE Homepage; check FSEconomy Tools Menu appears on the right
-
-# To use it in Tampermonkey/Greasemonkey:
-
-- Create a configuration file: copy the config.example.ts to config.ts (see instructions in config.example.ts as well)
-- Run the project locally to get a built version of FSEconomy Tools (run `pnpm build`). The file will be located in `./dist`
-- Create a new script in tampermonkey
-- Paste the contents of `tampermonkey-script/script.js` in the script
-- Point the path at the @require line to where the built version of FSEconomy Tools is (a pre-built version will be made available later)
+- Create a configuration file: copy `src/config.example.ts` to `src/config.ts`.
+- Run `pnpm build` to create `dist/bundle.js` and `dist/fseconomy-tools.user.js`.
+- For a local-only Tampermonkey install, create a new script and paste `tampermonkey-script/script.js`, then replace the hosted `@require` URL with your local `dist/bundle.js` path.
 
 # To run locally:
 
-`$ pnpm dev`
+`pnpm dev`
+
+# GitHub release hosting
+
+- `tampermonkey-script/script.js` auto-updates from `package.json` and points `@require` at the latest GitHub Release asset.
+- `pnpm build` now generates both `dist/bundle.js` and `dist/fseconomy-tools.user.js`.
+- Pushing a tag like `v0.7.0` triggers `.github/workflows/release-assets.yml`, which builds the project and uploads both files to the matching GitHub Release.
+- The hosted bundle URL used by the userscript is:
+  `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/bundle.js`
 
 # About
 

@@ -3,6 +3,10 @@
   "version": "0.7.0",
   "main": "index.js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thrustvectorlabs/fseconomy-tools.git"
+  },
   "packageManager": "pnpm@10.23.0",
   "devDependencies": {
     "prettier": "3.8.3",
@@ -29,11 +33,13 @@
   },
   "scripts": {
     "generate:msfs-2020-airports-lite": "node scripts/generate-msfs-2020-airports-lite.cjs",
+    "prepare:release-assets": "node scripts/prepare-release-assets.cjs",
     "sync:userscript-version": "node scripts/sync-userscript-version.cjs",
     "predev": "pnpm run sync:userscript-version",
     "prebuild": "pnpm run sync:userscript-version",
     "dev": "webpack --mode=development --watch",
     "build": "webpack --mode=production",
+    "postbuild": "pnpm run prepare:release-assets",
     "tsc": "tsc",
     "format": "prettier --write \"src/**/*.{ts,tsx,scss,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,scss,md}\"",
