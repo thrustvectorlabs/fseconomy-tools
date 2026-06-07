@@ -1,11 +1,5 @@
-import { enhanceAircraftLog } from './aircraftlog';
-import { enhanceAirport } from './airport';
-import { enhanceFbosForSale } from './fbosforsale';
-import { enhanceMyFlight } from './myflight';
+import { siteEnhancers } from './registry';
 
 export const runSiteEnhancers = () => {
-  enhanceAircraftLog();
-  enhanceAirport();
-  enhanceFbosForSale();
-  enhanceMyFlight();
+  siteEnhancers.forEach((enhancer) => enhancer.enhance());
 };

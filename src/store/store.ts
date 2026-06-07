@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist, subscribeWithSelector } from 'zustand/middleware';
+import { IS_DEV_BUILD } from '../build-info';
+import { config } from '../config';
 import { Aircraft, Airport, Assignment, SearchFormParameters } from '../types/types';
 
 type State = {
@@ -7,6 +9,8 @@ type State = {
   aircraft: Aircraft[]; // Assuming aircraft is an array of some type
   airport?: Airport[];
   assignments: Assignment[];
+  isDevelopmentMode: boolean;
+  isFullscreen: boolean;
   isOpen: boolean;
   myFlight: null | Assignment;
   pageToShow: string;
@@ -18,11 +22,17 @@ type State = {
   clearAssignmentsAndAircraft: () => void;
   getAircraftByRegistration: (registration: string) => Aircraft | undefined;
   getAirportByIcao: (icao: string) => Airport | undefined;
+  setDevelopmentMode: (isDevelopmentMode: boolean) => void;
+  setIsFullscreen: (isFullscreen: boolean) => void;
   setPageToShow: (page: string) => void;
   setSearchFormParameters: (searchFormParameters: SearchFormParameters) => void;
+  toggleDevelopmentMode: () => void;
+  toggleFullscreen: () => void;
   toggleCollapse: () => void;
   setIsOpen: (isOpen: boolean) => void;
 };
+
+const getDefaultDevelopmentMode = () => IS_DEV_BUILD || config.developmentMode === true;
 
 export const useStore = create<State>()(
   persist(
@@ -32,11 +42,22 @@ export const useStore = create<State>()(
         aircraft: [],
         airport: [],
         assignments: [],
+        isDevelopmentMode: getDefaultDevelopmentMode(),
+        isFullscreen: false,
         isOpen: false,
         myFlight: null,
         pageToShow: 'search',
         searchFormParameters: null,
-        toggleCollapse: () => set((state) => ({ isOpen: !state.isOpen })),
+        toggleCollapse: () =>
+          set((state) => ({
+            isFullscreen: state.isOpen ? false : state.isFullscreen,
+            isOpen: !state.isOpen,
+          })),
+        toggleFullscreen: () =>
+          set((state) => ({
+            isFullscreen: !state.isFullscreen,
+            isOpen: true,
+          })),
 
         addAircraft: (aircraft: Aircraft[]) =>
           set((state) => {
@@ -100,9 +121,18 @@ export const useStore = create<State>()(
 
         setPageToShow: (page: string) => set({ pageToShow: page }),
 
+        setDevelopmentMode: (isDevelopmentMode: boolean) => set({ isDevelopmentMode }),
+
+        setIsFullscreen: (isFullscreen: boolean) => set({ isFullscreen }),
+
         setIsOpen: (isOpen: boolean) => set({ isOpen }),
 
         setSearchFormParameters: (searchFormParameters: SearchFormParameters) => set({ searchFormParameters }),
+
+        toggleDevelopmentMode: () =>
+          set((state) => ({
+            isDevelopmentMode: !state.isDevelopmentMode,
+          })),
       })),
     ),
     {
@@ -120,6 +150,8 @@ export const useStore = create<State>()(
         accountInformation: state.accountInformation,
         aircraft: state.aircraft,
         assignments: state.assignments,
+        isDevelopmentMode: state.isDevelopmentMode,
+        isFullscreen: state.isFullscreen,
         isOpen: state.isOpen,
         pageToShow: state.pageToShow,
       }),
@@ -128,6 +160,9 @@ export const useStore = create<State>()(
         if (error) {
           console.error('❌ Failed to rehydrate store:', error);
         } else {
+          if (state && IS_DEV_BUILD) {
+            state.setDevelopmentMode(true);
+          }
           console.log('✅ FSE Tools Store rehydrated');
         }
       },

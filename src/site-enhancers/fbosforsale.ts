@@ -7,11 +7,19 @@ interface FboListing {
   size?: string;
 }
 
+import { SiteEnhancerDefinition } from './types';
+
+const FBOS_FOR_SALE_PATHNAME = 'fbosforsale.jsp';
+
+const getFboElements = () => ({
+  fboTableElement: document.querySelector<HTMLElement>('#wrapper table.fboTable'),
+  fboListingRows: document.querySelectorAll('#wrapper > div > div.dataTable > form > table > tbody > tr'),
+});
+
 export const enhanceFbosForSale = () => {
   // Modifiers
-  if (window.location.href.split('?')[0].indexOf('fbosforsale.jsp') !== -1) {
-    const fboTableElement: HTMLElement | null = document.querySelector('#wrapper table.fboTable');
-    const fboListingRows = document.querySelectorAll('#wrapper > div > div.dataTable > form > table > tbody > tr');
+  if (window.location.href.split('?')[0].indexOf(FBOS_FOR_SALE_PATHNAME) !== -1) {
+    const { fboTableElement, fboListingRows } = getFboElements();
 
     const listings: FboListing[] = Array.from(fboListingRows).map((row) => {
       const columns = row.querySelectorAll('td');
@@ -180,4 +188,26 @@ export const enhanceFbosForSale = () => {
       );
     }
   }
+};
+
+export const fbosForSaleEnhancer: SiteEnhancerDefinition = {
+  id: 'fbosforsale',
+  debugLabel: 'FBOs For Sale',
+  matchesCurrentPage: () => window.location.href.split('?')[0].indexOf(FBOS_FOR_SALE_PATHNAME) !== -1,
+  enhance: enhanceFbosForSale,
+  getDebugInfo: () => {
+    const { fboTableElement, fboListingRows } = getFboElements();
+    const listingCount = fboListingRows.length;
+    const sampleRow = fboListingRows[0];
+    const sampleColumns = sampleRow
+      ? Array.from(sampleRow.querySelectorAll('td')).map((cell) => cell.innerText.trim())
+      : [];
+
+    return {
+      hasSummaryTable: document.body.innerText.includes("Summary: FBO's for sale"),
+      listingCount,
+      hasTableElement: !!fboTableElement,
+      sampleRowColumns: sampleColumns,
+    };
+  },
 };

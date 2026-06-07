@@ -1,13 +1,20 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
+    "rootDir": "./src",
     "outDir": "./dist/",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
     "target": "es2022",
-    "lib": ["es2022", "DOM"],
+    "lib": ["es2025", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
-    "allowJs": true,
-    "strict": true
-  }
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noUncheckedSideEffectImports": false,
+    "types": ["jest"]
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules", "src/**/*.test.ts"]
 }

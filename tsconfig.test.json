@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "/tmp/fset-tests",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "types": []
+  },
+  "include": ["src/utils/coordinates.ts", "src/utils/getAircraft.ts", "src/data/aircraftList.ts"],
+  "exclude": ["dist", "node_modules", "src/**/*.test.ts"]
+}

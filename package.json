@@ -1,37 +1,50 @@
 {
   "name": "fseconomy-tools",
-  "version": "0.0.1",
+  "version": "0.7.0",
   "main": "index.js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thrustvectorlabs/fseconomy-tools.git"
+  },
   "packageManager": "pnpm@10.23.0",
   "devDependencies": {
-    "prettier": "3.6.2",
-    "ts-loader": "9.5.2",
+    "prettier": "3.8.3",
+    "ts-loader": "9.6.0",
     "ts-prune": "^0.10.3",
-    "typescript": "5.9.2",
-    "webpack": "5.101.0",
-    "webpack-cli": "6.0.1"
+    "typescript": "^6.0.3",
+    "webpack": "5.107.2",
+    "webpack-cli": "7.0.3"
   },
   "dependencies": {
     "@types/jest": "^30.0.0",
-    "@types/react": "19.1.9",
-    "@types/react-dom": "19.1.7",
-    "css-loader": "7.1.2",
-    "jest": "^30.0.5",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
+    "css-loader": "7.1.4",
+    "jest": "^30.4.2",
     "md5": "^2.3.0",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "sass": "^1.89.2",
-    "sass-loader": "16.0.5",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "sass": "^1.100.0",
+    "sass-loader": "17.0.0",
     "style-loader": "4.0.0",
-    "ts-jest": "^29.4.1",
-    "zustand": "^5.0.7"
+    "ts-jest": "^29.4.11",
+    "zustand": "^5.0.14"
   },
   "scripts": {
+    "generate:msfs-2020-airports-lite": "node scripts/generate-msfs-2020-airports-lite.cjs",
+    "prepare:release-assets": "node scripts/prepare-release-assets.cjs",
+    "sync:userscript-version": "node scripts/sync-userscript-version.cjs",
+    "predev": "pnpm run sync:userscript-version",
+    "prebuild": "pnpm run sync:userscript-version",
     "dev": "webpack --mode=development --watch",
     "build": "webpack --mode=production",
+    "postbuild": "pnpm run prepare:release-assets",
     "tsc": "tsc",
-    "lint": "ts-prune; prettier -c src/",
-    "test": "jest"
+    "format": "prettier --write \"src/**/*.{ts,tsx,scss,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,scss,md}\"",
+    "lint": "pnpm run format:check",
+    "unused": "ts-prune",
+    "test": "tsc -p tsconfig.test.json && node --test test/*.test.cjs"
   }
 }

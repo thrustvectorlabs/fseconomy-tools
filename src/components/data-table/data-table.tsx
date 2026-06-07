@@ -146,18 +146,22 @@ export const DataTable = <RowType extends object>({
                 onClick={column.sortable ? () => handleSort(String(column.key)) : undefined}
                 style={{ cursor: column.sortable ? 'pointer' : 'default', userSelect: 'none' }}
               >
-                {column.label}
-                {sortState?.columnKey === String(column.key) && (sortState.direction === 'asc' ? ' 🔼' : ' 🔽')}
+                <span className="data-table__heading">
+                  <span>{column.label}</span>
+                  {sortState?.columnKey === String(column.key) ? (
+                    <span className="data-table__sort-indicator">{sortState.direction === 'asc' ? '▲' : '▼'}</span>
+                  ) : null}
+                </span>
 
                 {column.filterable && (
-                  <div>
+                  <div className="data-table__filter">
                     <input
                       type="text"
                       placeholder={`Filter`}
                       value={columnFilters[String(column.key)] ?? ''}
                       onClick={(event) => event.stopPropagation()}
                       onChange={(event) => handleFilterChange(String(column.key), event.currentTarget.value)}
-                      style={{ width: '70px', padding: '3px' }}
+                      className="data-table__filter-input"
                     />
                   </div>
                 )}

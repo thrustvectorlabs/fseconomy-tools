@@ -1,9 +1,9 @@
-import { config } from '../config';
 import { useStore } from '../store/store';
 import { Aircraft, Assignment } from '../types/types';
 import { extractPayload } from '../utils/assignments';
 import { extractTableCellValuesFromRow } from '../utils/extractTableCellValuesFromRow';
 import { getAircraftIdByName } from '../utils/getAircraft';
+import { config } from '../config';
 
 /** Local shared types for clarity */
 interface AirportData {
@@ -16,10 +16,10 @@ type PayloadUnit = 'pax' | 'kg';
 
 /** Dev-gated logger */
 const logInfo = (...args: unknown[]) => {
-  if (config.developmentMode) console.info(...args);
+  if (useStore.getState().isDevelopmentMode) console.info(...args);
 };
 const logWarn = (...args: unknown[]) => {
-  if (config.developmentMode) console.warn(...args);
+  if (useStore.getState().isDevelopmentMode) console.warn(...args);
 };
 
 /** Parsing helpers */
@@ -41,6 +41,15 @@ const parseCurrencyToNumber = (value: string | null | undefined): number | null 
 const getOptionalCell = (cells: string[], index: number): string | null =>
   index >= 0 && index < cells.length ? cells[index] : null;
 
+const normalizeAssignmentType = (value: string | null | undefined): AssignmentType | null => {
+  const normalized = value?.trim().toUpperCase();
+  if (!normalized) return null;
+  if (normalized.startsWith('ALL-IN') || normalized.startsWith('A')) return 'A';
+  if (normalized.startsWith('VIP') || normalized.startsWith('V')) return 'V';
+  if (normalized.startsWith('TRIP') || normalized.startsWith('T')) return 'T';
+  return null;
+};
+
 /** Payload unit inference */
 const inferPayloadUnit = (assignmentType: AssignmentType, description: string): PayloadUnit => {
   if (assignmentType === 'V' || assignmentType === 'A') return 'pax';
@@ -61,7 +70,9 @@ const getDistanceBonus = (tdCellText: string): number => {
 
 /** Adds airport information to the store, if found */
 const addAirportToStore = (icao: string, dom: Document): void => {
-  const airportNameElement = dom.querySelector('div.panel-body.airportInfo > div > div > div:nth-child(1)');
+  const airportNameElement = dom.querySelector(
+    'div.panel-body.airportInfo .thumbnail > div[style*="font-size:14px"][style*="font-weight:bold"]',
+  );
   const airportText = airportNameElement?.textContent?.trim() ?? '';
   const [name = '', city = '', country = ''] = airportText.split(', ').map((s) => s.trim());
 
@@ -98,7 +109,11 @@ const getAircraftData = (dom: Document, icao: string, aircraftModelId: number): 
       // Expected columns: [0]=registration, [1]=type, [3]=home, [4]=bonus, [5]=price cell text
       const registration = getOptionalCell(cells, 0)?.replace('*', '').trim();
       const type = getOptionalCell(cells, 1)?.trim();
-      const homeIcao = getOptionalCell(cells, 3)?.trim();
+      const homeIcao =
+        aircraftRow
+          .querySelectorAll('td')[3]
+          ?.querySelector<HTMLAnchorElement>('a[href*="airport.jsp?icao="]')
+          ?.textContent?.trim() ?? getOptionalCell(cells, 3)?.trim();
       const bonusCell = getOptionalCell(cells, 4) ?? '';
       const priceCell = aircraftRow.querySelectorAll('td')[5];
 
@@ -126,7 +141,9 @@ const getAircraftData = (dom: Document, icao: string, aircraftModelId: number): 
       }
 
       // Repair image is in the first (index 0) td.
-      const needsRepair = Boolean(aircraftRow.querySelector('td img[src="img/repair.gif"]'));
+      const needsRepair = Boolean(
+        aircraftRow.querySelector('td i.fa-wrench, td img[src="img/repair.gif"], td img[src*="repair"]'),
+      );
 
       const isRentableDry = !!priceDry;
       const isRentableWet = !!priceWet;
@@ -180,7 +197,7 @@ const getAssignments = (dom: Document, icao: string): Assignment[] => {
       const aircraftText = getOptionalCell(cells, 8)?.trim();
       const expires = getOptionalCell(cells, 9)?.trim() ?? '';
 
-      const assignmentType = typeCell.substring(0, 1) as AssignmentType;
+      const assignmentType = normalizeAssignmentType(typeCell);
       const pay = parseCurrencyToNumber(payText) ?? 0;
       const distance = toInteger(distanceText) ?? 0;
       const bearing = toInteger(bearingText) ?? 0;
@@ -188,7 +205,7 @@ const getAssignments = (dom: Document, icao: string): Assignment[] => {
       const isPassengerTerminalAssignment =
         assignmentRow.querySelectorAll('td')[6]?.querySelector('font[color="Green"]') !== null;
 
-      if (pay <= 0 || !destination) {
+      if (pay <= 0 || !destination || !assignmentType) {
         // Skip non-paying or malformed rows
         return undefined;
       }
