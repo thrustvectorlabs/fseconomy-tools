@@ -16,8 +16,8 @@ FSEconomy Tools (FSET) - unofficial enhancements for FSEconomy (server.fseconomy
 pnpm install
 ```
 
-- Create a configuration file: copy `src/config.example.ts` to `src/config.ts`.
 - Run `pnpm build` to create `dist/bundle.js` and `dist/fseconomy-tools.user.js`.
+- Adjust `src/config.ts` if you want different default aircraft or airports for local development.
 - For a local-only Tampermonkey install, create a new script and paste `tampermonkey-script/script.js`, then replace the hosted `@require` URL with your local `dist/bundle.js` path.
 
 # To run locally:
