@@ -2,6 +2,8 @@ name: Release Assets
 
 on:
   push:
+    branches:
+      - 'pre-release'
     tags:
       - 'v*'
   workflow_dispatch:

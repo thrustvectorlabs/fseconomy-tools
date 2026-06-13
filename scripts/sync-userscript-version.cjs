@@ -5,13 +5,13 @@ const packageJsonPath = path.join(__dirname, '..', 'package.json');
 const userscriptPath = path.join(__dirname, '..', 'tampermonkey-script', 'script.js');
 const repositoryOwner = 'thrustvectorlabs';
 const repositoryName = 'fseconomy-tools';
-const defaultBranch = 'main';
+const latestReleaseBaseUrl = `https://github.com/${repositoryOwner}/${repositoryName}/releases/latest/download`;
 
 const userscriptMetadata = {
   version: null,
-  downloadURL: `https://raw.githubusercontent.com/${repositoryOwner}/${repositoryName}/${defaultBranch}/tampermonkey-script/script.js`,
-  updateURL: `https://raw.githubusercontent.com/${repositoryOwner}/${repositoryName}/${defaultBranch}/tampermonkey-script/script.js`,
-  require: `https://github.com/${repositoryOwner}/${repositoryName}/releases/latest/download/bundle.js`,
+  downloadURL: `${latestReleaseBaseUrl}/fseconomy-tools.user.js`,
+  updateURL: `${latestReleaseBaseUrl}/fseconomy-tools.user.js`,
+  require: `${latestReleaseBaseUrl}/bundle.js`,
 };
 
 const { version } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));

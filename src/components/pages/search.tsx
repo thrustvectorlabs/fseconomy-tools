@@ -7,15 +7,8 @@ export const SearchPage = () => {
           <div className="fset-form-section__header">
             <h2 className="fset-form-section__title">Overview</h2>
             <p className="fset-form-section__subtitle">
-              FSE Tools is being prepared for a broader public release. The interactive search, assignment, and aircraft
-              workflows are temporarily disabled while the release build is being finalized.
-            </p>
-          </div>
-          <div className="fset-placeholder-copy">
-            <p>The current menu confirms that the userscript is loaded and shows the current build details.</p>
-            <p>
-              Once the release work is complete, this area will expose the airport search, assignment review, and
-              aircraft discovery tools again.
+              FSE Tools is currently in beta. Currently the Airport Dispatcher on the Airport page is implemented, and
+              more features are in development.
             </p>
           </div>
         </section>
@@ -32,6 +25,15 @@ export const SearchPage = () => {
             <div className="fset-placeholder-value">{BUILD_TIME}</div>
             <div className="fset-placeholder-label">Status</div>
             <div className="fset-placeholder-value">Release preparation</div>
+          </div>
+        </section>
+        <section className="fset-form-section">
+          <div className="fset-form-section__header">
+            <h2 className="fset-form-section__title">Disclaimer</h2>
+            <p className="fset-form-section__subtitle">
+              FSE Tools is currently in beta and still in development. The author is not affiliated with the FSEconomy
+              Team and is not responsible for any damage or issues you believe may be caused by this software.
+            </p>
           </div>
         </section>
 

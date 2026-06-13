@@ -6,7 +6,7 @@
 // @match        https://server.fseconomy.net/*
 // @author       You
 // @require      https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/bundle.js
-// @downloadURL  https://raw.githubusercontent.com/thrustvectorlabs/fseconomy-tools/main/tampermonkey-script/script.js
-// @updateURL    https://raw.githubusercontent.com/thrustvectorlabs/fseconomy-tools/main/tampermonkey-script/script.js
+// @downloadURL  https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js
+// @updateURL    https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js
 // @grant        none
 // ==/UserScript==

@@ -5,7 +5,7 @@ FSEconomy Tools (FSET) - unofficial enhancements for FSEconomy (server.fseconomy
 # Install
 
 - Install the published userscript from:
-  `https://raw.githubusercontent.com/thrustvectorlabs/fseconomy-tools/main/tampermonkey-script/script.js`
+  `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
 - Load FSE Homepage and confirm the FSE Tools menu appears on the right.
 
 # Local development
@@ -26,11 +26,14 @@ pnpm install
 
 # GitHub release hosting
 
-- `tampermonkey-script/script.js` auto-updates from `package.json` and points `@require` at the latest GitHub Release asset.
+- `tampermonkey-script/script.js` auto-updates from `package.json`.
+- Installed Tampermonkey updates should come from the latest release userscript asset:
+  `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
 - `pnpm build` now generates both `dist/bundle.js` and `dist/fseconomy-tools.user.js`.
 - Pushing a tag like `v0.7.0` triggers `.github/workflows/release-assets.yml`, which builds the project and uploads both files to the matching GitHub Release.
-- The hosted bundle URL used by the userscript is:
+- The repo copy of the userscript points `@require` at the latest hosted bundle:
   `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/bundle.js`
+- The released `fseconomy-tools.user.js` asset is rewritten during build to point at its matching tagged bundle, so each published userscript loads the correct release payload.
 
 # About
 
