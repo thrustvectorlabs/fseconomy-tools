@@ -6,7 +6,7 @@
     <title>FSE Tools</title>
     <meta
       name="description"
-      content="FSE Tools is an unofficial Tampermonkey userscript that upgrades the FSEconomy web interface with better search, planning, and flight workflow tools."
+      content="FSE Tools is an unofficial Tampermonkey userscript that enhances the FSEconomy web interface."
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -31,7 +31,7 @@
             <h1>FSE Tools</h1>
             <p class="hero__lede">
               FSE Tools is a Tampermonkey userscript with unofficial enhancements for the FSEconomy web interface. It
-              helps with search, planning, and flight workflow on
+              helps with airport dispatch, planning, and flight workflow on
               <code>server.fseconomy.net</code> without taking over the site. It is open source and free.
             </p>
             <div class="hero__cta">
@@ -57,24 +57,24 @@
               </div>
               <div class="preview-window__content">
                 <div class="preview-stat">
-                  <span class="preview-stat__label">Search flow</span>
-                  <strong>Faster aircraft and assignment evaluation</strong>
+                  <span class="preview-stat__label">Airport workflow</span>
+                  <strong>Faster dispatch evaluation inside the airport page</strong>
                 </div>
                 <div class="preview-grid">
                   <article class="preview-card preview-card--accent">
-                    <span class="preview-card__tag">Default filter</span>
-                    <h2>Broken aircraft hidden by default</h2>
-                    <p>Less noise when you are trying to make a dispatch decision quickly.</p>
+                    <span class="preview-card__tag">Airport page</span>
+                    <h2>Airport Dispatcher</h2>
+                    <p>Bring nearby assignments, aircraft context, and map links into one compact panel.</p>
                   </article>
                   <article class="preview-card">
                     <span class="preview-card__tag">Planning</span>
                     <h2>SimBrief handoff</h2>
-                    <p>Generate a flight-planning path directly from your selected trip.</p>
+                    <p>Create a SimBrief dispatch directly from your current My Flight details.</p>
                   </article>
                   <article class="preview-card">
                     <span class="preview-card__tag">Safety checks</span>
-                    <h2>ICAO mismatch warnings</h2>
-                    <p>Catch airport identifier issues before they break an arrival.</p>
+                    <h2>MSFS coordinate validation</h2>
+                    <p>Compare FSEconomy airport data with MSFS coordinates before a mismatch becomes a problem.</p>
                   </article>
                 </div>
               </div>
@@ -93,8 +93,7 @@
             <div class="about-copy">
               <p>
                 FSE Tools is not meant to overhaul FSEconomy or replace its normal workflow. It adds focused tools on
-                top of the existing pages so it is easier to evaluate assignments, compare aircraft, and choose a more
-                suitable flight.
+                top of the existing pages so it is easier to evaluate assignments and plan a more suitable flight.
               </p>
               <p>
                 The airport dispatcher view is a good example. It brings the available jobs and aircraft into a more

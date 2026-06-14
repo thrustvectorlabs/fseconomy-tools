@@ -34,6 +34,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate package
+        run: pnpm tsc
+
+      - name: Check formatting
+        run: pnpm lint
+
+      - name: Run tests
         run: pnpm test
 
       - name: Build release assets

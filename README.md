@@ -51,7 +51,6 @@ This tooling was created because I love FSEconomy (FSE). Among the career simula
 
 - **Airport Dispatcher on airport pages.** FSEconomy Tools adds a compact Airport Dispatcher panel to the airport page with dispatch summaries, map links, and quick access to nearby opportunities.
 - **SimBrief integration.** SimBrief delivers an advanced flight‑planning tool in an accessible format for flight simmers. FSEconomy Tools adds a link on the **My Flight** page to create a SimBrief flight plan based on the flight you have selected.
-- **Useful page enhancements.** FSEconomy Tools adds small quality-of-life improvements to pages like **Aircraft Log** and **FBOs For Sale** while keeping the original FSE workflows intact.
 - **MSFS coordinate validation.** Airport pages include checks and helpers for airport coordinates so it is easier to compare FSEconomy airport data with MSFS and copy coordinates into the simulator. This should help preventing your aircraft from getting stuck at a non-existing airport.
 
 ## PRs welcome
