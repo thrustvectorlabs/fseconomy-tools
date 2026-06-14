@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FS Economy Tools
 // @namespace    http://tampermonkey.net/
-// @version      0.7.2
+// @version      0.8.0
 // @description  Unofficial FSEconomy tooling
 // @match        https://server.fseconomy.net/*
 // @author       github.com/thrustvectorlabs

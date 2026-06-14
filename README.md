@@ -4,8 +4,7 @@ FSEconomy Tools (FSET) provides unofficial enhancements for FSEconomy (`server.f
 
 # FSE Tools Homepage
 
-- FSE Tools website + installation instructions:
-  `https://thrustvectorlabs.github.io/fseconomy-tools/`
+- [FSE Tools website and installation instructions](https://thrustvectorlabs.github.io/fseconomy-tools/)
 
 # Local development
 
