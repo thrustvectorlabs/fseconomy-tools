@@ -1,7 +1,6 @@
 {
   "name": "fseconomy-tools",
   "version": "0.7.1",
-  "main": "index.js",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,6 +8,8 @@
   },
   "packageManager": "pnpm@10.23.0",
   "devDependencies": {
+    "@types/node": "^25.9.3",
+    "knip": "^6.16.1",
     "prettier": "3.8.3",
     "ts-loader": "9.6.0",
     "ts-prune": "^0.10.3",
@@ -22,7 +23,6 @@
     "@types/react-dom": "19.2.3",
     "css-loader": "7.1.4",
     "jest": "^30.4.2",
-    "md5": "^2.3.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "sass": "^1.100.0",
@@ -45,6 +45,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,scss,md}\"",
     "lint": "pnpm run format:check",
     "unused": "ts-prune",
-    "test": "tsc -p tsconfig.test.json && node --test test/*.test.cjs"
+    "test": "tsc -p tsconfig.test.json && node --test test/*.test.cjs",
+    "knip": "knip"
   }
 }

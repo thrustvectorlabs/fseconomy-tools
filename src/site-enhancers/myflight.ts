@@ -19,7 +19,7 @@ const getMyFlightElements = () => ({
   statusElement: document.querySelector<HTMLElement>('.myflight-status'),
 });
 
-export const enhanceMyFlight = () => {
+const enhanceMyFlight = () => {
   // Modifiers
   if (window.location.href.split('?')[0].indexOf(MY_FLIGHT_PATHNAME) !== -1) {
     const hasFlight = !!document.querySelectorAll('.myflight-assignments--ready').length;

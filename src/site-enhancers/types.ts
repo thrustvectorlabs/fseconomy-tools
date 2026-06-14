@@ -1,4 +1,4 @@
-export interface SiteEnhancerDebugInfo {
+interface SiteEnhancerDebugInfo {
   [key: string]: unknown;
 }
 

@@ -1659,7 +1659,7 @@ const updateIcaoHeading = (element: HTMLElement | null, icao: string): void => {
   }
 };
 
-export const enhanceAirport = () => {
+const enhanceAirport = () => {
   const url = new URL(window.location.href);
   if (!url.pathname.endsWith(AIRPORT_PATHNAME)) {
     return;
