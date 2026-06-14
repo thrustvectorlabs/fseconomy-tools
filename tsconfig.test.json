@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "/tmp/fset-tests",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "types": []
+  },
+  "include": [
+    "src/utils/coordinates.ts",
+    "src/utils/aircraftType.ts",
+    "src/data/aircraftListTextIcao.ts",
+    "src/data/aircraftListTextIcaoOverrides.ts",
+    "src/site-enhancers/myflight.ts"
+  ],
+  "exclude": ["dist", "node_modules", "src/**/*.test.ts"]
+}

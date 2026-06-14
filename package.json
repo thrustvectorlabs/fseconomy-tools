@@ -1,0 +1,51 @@
+{
+  "name": "fseconomy-tools",
+  "version": "0.8.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thrustvectorlabs/fseconomy-tools.git"
+  },
+  "packageManager": "pnpm@10.23.0",
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "knip": "^6.16.1",
+    "prettier": "3.8.3",
+    "ts-loader": "9.6.0",
+    "ts-prune": "^0.10.3",
+    "typescript": "^6.0.3",
+    "webpack": "5.107.2",
+    "webpack-cli": "7.0.3"
+  },
+  "dependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
+    "css-loader": "7.1.4",
+    "jest": "^30.4.2",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "sass": "^1.100.0",
+    "sass-loader": "17.0.0",
+    "style-loader": "4.0.0",
+    "ts-jest": "^29.4.11",
+    "zustand": "^5.0.14"
+  },
+  "scripts": {
+    "generate:msfs-2020-airports-lite": "node scripts/generate-msfs-2020-airports-lite.cjs",
+    "prepare:release-assets": "node scripts/prepare-release-assets.cjs",
+    "sync:userscript-version": "node scripts/sync-userscript-version.cjs",
+    "predev": "pnpm run sync:userscript-version",
+    "prebuild": "pnpm run sync:userscript-version",
+    "dev": "webpack --mode=development --watch",
+    "build": "webpack --mode=production",
+    "postbuild": "pnpm run prepare:release-assets",
+    "tsc": "tsc",
+    "format": "prettier --write \"src/**/*.{ts,tsx,scss,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,scss,md}\"",
+    "lint": "pnpm run format:check",
+    "unused": "ts-prune",
+    "test": "tsc -p tsconfig.test.json && node --test test/*.test.cjs",
+    "knip": "knip"
+  }
+}
