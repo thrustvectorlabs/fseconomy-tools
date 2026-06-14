@@ -7,8 +7,8 @@ export const SearchPage = () => {
           <div className="fset-form-section__header">
             <h2 className="fset-form-section__title">Overview</h2>
             <p className="fset-form-section__subtitle">
-              FSE Tools is currently in beta. Currently the Airport Dispatcher on the Airport page is implemented, and
-              more features are in development.
+              FSE Tools is currently in beta. The Airport Dispatcher on the Airport page is implemented, and more
+              features are in development (e.g. a better search to find assignments). Feedback is welcome via Discord.
             </p>
           </div>
         </section>
@@ -16,15 +16,11 @@ export const SearchPage = () => {
         <section className="fset-form-section">
           <div className="fset-form-section__header">
             <h2 className="fset-form-section__title">Build Information</h2>
-            <p className="fset-form-section__subtitle">Basic release metadata for the currently loaded bundle.</p>
+            <p className="fset-form-section__subtitle">This displays the version of FSE Tools loaded.</p>
           </div>
           <div className="fset-form-grid">
             <div className="fset-placeholder-label">Version</div>
             <div className="fset-placeholder-value">{PACKAGE_VERSION}</div>
-            <div className="fset-placeholder-label">Build Time</div>
-            <div className="fset-placeholder-value">{BUILD_TIME}</div>
-            <div className="fset-placeholder-label">Status</div>
-            <div className="fset-placeholder-value">Release preparation</div>
           </div>
         </section>
         <section className="fset-form-section">

@@ -2,13 +2,7 @@
 
 FSEconomy Tools (FSET) - unofficial enhancements for FSEconomy (server.fseconomy.net)
 
-# Install
-
-- Install the published userscript from:
-  `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
-- Load FSE Homepage and confirm the FSE Tools menu appears on the right.
-
-# GitHub Pages landing page
+# FSE Tools Homepage via GitHub Pages
 
 - The repo now includes a standalone landing page in `docs/`.
 - Enable GitHub Pages in the repository settings and publish from the `main` branch, `/docs` folder.
@@ -16,6 +10,12 @@ FSEconomy Tools (FSET) - unofficial enhancements for FSEconomy (server.fseconomy
   what FSET is, why someone would use it, and how to install it.
 - Keep the actual script distribution on GitHub Releases:
   `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
+
+# Install
+
+- Install the published userscript from:
+  `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
+- Load FSEconomy while logged in and confirm the FSE Tools menu appears on the right.
 
 # Local development
 
@@ -39,7 +39,7 @@ pnpm install
 - Installed Tampermonkey updates should come from the latest release userscript asset:
   `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
 - `pnpm build` now generates both `dist/bundle.js` and `dist/fseconomy-tools.user.js`.
-- Pushing a tag like `v0.7.0` triggers `.github/workflows/release-assets.yml`, which builds the project and uploads both files to the matching GitHub Release.
+- Pushing a tag like `v0.7.1` triggers `.github/workflows/release-assets.yml`, which builds the project and uploads both files to the matching GitHub Release.
 - The repo copy of the userscript points `@require` at the latest hosted bundle:
   `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/bundle.js`
 - The released `fseconomy-tools.user.js` asset is rewritten during build to point at its matching tagged bundle, so each published userscript loads the correct release payload.
@@ -47,13 +47,12 @@ pnpm install
 # About
 
 This is an old project I had laying on the shelf and decided to dust it off and publish it on GitHub.
-This tooling was created because I love FSEconomy (FSE). Among the career simulations available for flight simulators (particularly MSFS2020 and later), FSEconomy best meets my needs. However, I still have a long wishlist for FSEconomy. FSEconomy Tools offers:
+This tooling was created because I love FSEconomy (FSE). Among the career simulations available for flight simulators (particularly MSFS2020 and later), FSEconomy best meets my needs. However, I still have a long wishlist for FSEconomy as it slowly gets outdated. FSEconomy Tools offers enhancements:
 
-- **Intuitive layout in FSEconomy Tools.** FSE may seem like a relic from the past and may not showcase its full potential. FSEconomy Tools provides an intuitive interface for finding assignments and aircraft that are ready to fly.
-- **Default exclusion of broken aircraft.** Currently, you cannot filter out broken or unrepairable aircraft when searching. FSEconomy Tools ignores them by default.
+- **Airport Dispatcher on airport pages.** FSEconomy Tools adds a compact Airport Dispatcher panel to the airport page with dispatch summaries, map links, and quick access to nearby opportunities.
 - **SimBrief integration.** SimBrief delivers an advanced flight‑planning tool in an accessible format for flight simmers. FSEconomy Tools adds a link on the **My Flight** page to create a SimBrief flight plan based on the flight you have selected.
-- **Airport warnings and updated ICAO identifiers.** On several occasions, I flew to an airport using the assignment's ICAO, only to find that FS Economy did not register my arrival because the ICAO had been reassigned. FSEconomy Tools maintains a manually curated list of affected ICAO identifiers to warn you in advance.
-- **Payload matching.** When selecting an aircraft, you want to optimise payload. For example, a Cessna 208 can carry 13 passengers. After using the search
+- **Useful page enhancements.** FSEconomy Tools adds small quality-of-life improvements to pages like **Aircraft Log** and **FBOs For Sale** while keeping the original FSE workflows intact.
+- **MSFS coordinate validation.** Airport pages include checks and helpers for airport coordinates so it is easier to compare FSEconomy airport data with MSFS and copy coordinates into the simulator. This should help preventing your aircraft from getting stuck at a non-existing airport.
 
 ## PRs welcome
 
@@ -66,7 +65,7 @@ FSET is welcoming PRs. Techstack is TypeScript (strict), with React and Zustand 
 
 ## What FSEconomy Tools is _not_:
 
-- A tool that takes over FS Economy. All behaviour of the website is still exactly the same. If FSEconomy Tools adds something to the website (like SimBrief integration) it is clearly marked with the FSEconomy Tools badge.
+- A tool that takes over FS Economy. All behaviour of the website is still exactly the same. If FSEconomy Tools adds something to the website, it is clearly marked with the FSEconomy Tools badge.
 
 ### Reference links:
 
