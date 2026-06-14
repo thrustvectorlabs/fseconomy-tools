@@ -1,23 +1,15 @@
 # README
 
-FSEconomy Tools (FSET) - unofficial enhancements for FSEconomy (server.fseconomy.net)
+FSEconomy Tools (FSET) provides unofficial enhancements for FSEconomy (`server.fseconomy.net`).
 
-# FSE Tools Homepage via GitHub Pages
+# FSE Tools Homepage
 
-- The repo now includes a standalone landing page in `docs/`.
-- Enable GitHub Pages in the repository settings and publish from the `main` branch, `/docs` folder.
-- The landing page should stay focused on user-facing information:
-  what FSET is, why someone would use it, and how to install it.
-- Keep the actual script distribution on GitHub Releases:
-  `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
-
-# Install
-
-- Install the published userscript from:
-  `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
-- Load FSEconomy while logged in and confirm the FSE Tools menu appears on the right.
+- FSE Tools website + installation instructions:
+  `https://thrustvectorlabs.github.io/fseconomy-tools/`
 
 # Local development
+
+These steps are only needed if you want to run a local version of FSE Tools.
 
 - Set up the project:
 
@@ -27,11 +19,8 @@ pnpm install
 
 - Run `pnpm build` to create `dist/bundle.js` and `dist/fseconomy-tools.user.js`.
 - Adjust `src/config.ts` if you want different default aircraft or airports for local development.
-- For a local-only Tampermonkey install, create a new script and paste `tampermonkey-script/script.js`, then replace the hosted `@require` URL with your local `dist/bundle.js` path.
-
-# To run locally:
-
-`pnpm dev`
+- For a local-only Tampermonkey install, create a new script, paste in `tampermonkey-script/script.js`, and replace the hosted `@require` URL with your local `dist/bundle.js` path.
+- Then run `pnpm dev` to keep the bundle updated.
 
 # GitHub release hosting
 
@@ -46,25 +35,25 @@ pnpm install
 
 # About
 
-This is an old project I had laying on the shelf and decided to dust it off and publish it on GitHub.
-This tooling was created because I love FSEconomy (FSE). Among the career simulations available for flight simulators (particularly MSFS2020 and later), FSEconomy best meets my needs. However, I still have a long wishlist for FSEconomy as it slowly gets outdated. FSEconomy Tools offers enhancements:
+This is an older project I had on the shelf that I decided to dust off and publish on GitHub.
+I built it because I enjoy FSEconomy (FSE). Of the career simulation platforms available for flight simulators, especially in the MSFS2020 era and beyond, FSEconomy still fits what I want best. At the same time, I have a long wishlist for areas where the site could be improved as it continues to show its age. FSEconomy Tools adds a few of those improvements:
 
 - **Airport Dispatcher on airport pages.** FSEconomy Tools adds a compact Airport Dispatcher panel to the airport page with dispatch summaries, map links, and quick access to nearby opportunities.
 - **SimBrief integration.** SimBrief delivers an advanced flight‑planning tool in an accessible format for flight simmers. FSEconomy Tools adds a link on the **My Flight** page to create a SimBrief flight plan based on the flight you have selected.
-- **MSFS coordinate validation.** Airport pages include checks and helpers for airport coordinates so it is easier to compare FSEconomy airport data with MSFS and copy coordinates into the simulator. This should help preventing your aircraft from getting stuck at a non-existing airport.
+- **MSFS coordinate validation.** Airport pages include checks and helpers for airport coordinates, making it easier to compare FSEconomy airport data with MSFS and copy coordinates into the simulator. This helps prevent your aircraft from getting stuck at a non-existent airport.
 
 ## PRs welcome
 
-FSET is welcoming PRs. Techstack is TypeScript (strict), with React and Zustand for state management. Keep PRs small and feel free to open an issue first to discuss.
+PRs are welcome. The tech stack is strict TypeScript, with React and Zustand for state management. Keep PRs small, and feel free to open an issue first if you want to discuss an idea.
 
 ## Upcoming features
 
 - Calculate and display net income when selecting a group of assignments
-- Make a standalone version which can be directly loaded from Tampermonkey from a remote source
+- Make a standalone version that can be loaded directly into Tampermonkey from a remote source
 
 ## What FSEconomy Tools is _not_:
 
-- A tool that takes over FS Economy. All behaviour of the website is still exactly the same. If FSEconomy Tools adds something to the website, it is clearly marked with the FSEconomy Tools badge.
+- A tool that takes over FSEconomy. The site's native behavior stays the same. If FSEconomy Tools adds something to the website, it is clearly marked with the FSEconomy Tools badge.
 
 ### Reference links:
 
