@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FSE Tools</title>
+    <meta
+      name="description"
+      content="FSE Tools is an unofficial Tampermonkey userscript that upgrades the FSEconomy web interface with better search, planning, and flight workflow tools."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <nav class="topbar" aria-label="Primary">
+          <a class="brand" href="#top">
+            <span class="brand__mark">FSET</span>
+            <span class="brand__text">FSE Tools</span>
+          </a>
+          <div class="topbar__actions">
+            <a class="topbar__link" href="#features">Features</a>
+            <a class="topbar__link" href="#install">Install</a>
+            <a class="topbar__link" href="https://github.com/thrustvectorlabs/fseconomy-tools/releases"> Releases </a>
+          </div>
+        </nav>
+
+        <section class="hero__body" id="top">
+          <div class="hero__copy">
+            <p class="eyebrow">Unofficial FSEconomy companion</p>
+            <h1>FSE Tools</h1>
+            <p class="hero__lede">
+              FSE Tools is a Tampermonkey userscript with unofficial enhancements for the FSEconomy web interface. It
+              helps with search, planning, and flight workflow on
+              <code>server.fseconomy.net</code> without taking over the site. It is open source and free.
+            </p>
+            <div class="hero__cta">
+              <a class="button button--primary" href="#install"> Install FSE Tools </a>
+              <a class="button button--secondary" href="https://github.com/thrustvectorlabs/fseconomy-tools">
+                <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 1.5a10.5 10.5 0 0 0-3.32 20.46c.53.1.72-.23.72-.5v-1.94c-2.94.64-3.56-1.25-3.56-1.25-.48-1.2-1.17-1.52-1.17-1.52-.96-.66.07-.65.07-.65 1.06.08 1.62 1.09 1.62 1.09.94 1.62 2.47 1.15 3.07.88.09-.68.37-1.15.67-1.41-2.35-.27-4.82-1.17-4.82-5.2 0-1.15.41-2.1 1.08-2.84-.11-.27-.47-1.37.1-2.85 0 0 .88-.28 2.89 1.08a9.96 9.96 0 0 1 5.26 0c2.01-1.36 2.89-1.08 2.89-1.08.57 1.48.21 2.58.1 2.85.67.74 1.08 1.69 1.08 2.84 0 4.04-2.48 4.92-4.84 5.18.38.33.72.99.72 2v2.96c0 .28.19.61.73.5A10.5 10.5 0 0 0 12 1.5Z"
+                    fill="currentColor"
+                  />
+                </svg>
+                View Source
+              </a>
+            </div>
+          </div>
+
+          <div class="hero__panel" aria-label="Product preview">
+            <div class="preview-window">
+              <div class="preview-window__chrome">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="preview-window__content">
+                <div class="preview-stat">
+                  <span class="preview-stat__label">Search flow</span>
+                  <strong>Faster aircraft and assignment evaluation</strong>
+                </div>
+                <div class="preview-grid">
+                  <article class="preview-card preview-card--accent">
+                    <span class="preview-card__tag">Default filter</span>
+                    <h2>Broken aircraft hidden by default</h2>
+                    <p>Less noise when you are trying to make a dispatch decision quickly.</p>
+                  </article>
+                  <article class="preview-card">
+                    <span class="preview-card__tag">Planning</span>
+                    <h2>SimBrief handoff</h2>
+                    <p>Generate a flight-planning path directly from your selected trip.</p>
+                  </article>
+                  <article class="preview-card">
+                    <span class="preview-card__tag">Safety checks</span>
+                    <h2>ICAO mismatch warnings</h2>
+                    <p>Catch airport identifier issues before they break an arrival.</p>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </header>
+
+      <main>
+        <section class="section section--about" id="features">
+          <div class="section-heading">
+            <p class="eyebrow">What is FSE Tools?</p>
+            <h2>Extra tools for finding a better flight, inside the site you already use.</h2>
+          </div>
+          <div class="about-grid">
+            <div class="about-copy">
+              <p>
+                FSE Tools is not meant to overhaul FSEconomy or replace its normal workflow. It adds focused tools on
+                top of the existing pages so it is easier to evaluate assignments, compare aircraft, and choose a more
+                suitable flight.
+              </p>
+              <p>
+                The airport dispatcher view is a good example. It brings the available jobs and aircraft into a more
+                useful layout, helping you scan options faster while still working within the original FSEconomy page.
+              </p>
+            </div>
+            <figure class="about-figure">
+              <img
+                class="about-figure__image"
+                src="./airport-dispatcher.png"
+                alt="Screenshot of the FSE Tools airport dispatcher interface inside FSEconomy"
+              />
+            </figure>
+          </div>
+        </section>
+
+        <section class="section section--install" id="install">
+          <div class="section-heading">
+            <p class="eyebrow">Install</p>
+            <h2>Install in three steps.</h2>
+          </div>
+          <div class="install-grid">
+            <ol class="install-steps">
+              <li>
+                <strong>Install Tampermonkey.</strong>
+                It is one of the most popular browser extensions across all major browsers and allows to customize and
+                enhance the functionality of web pages. It&apos;s available via the official Tampermonkey website for
+                <a href="https://www.tampermonkey.net/index.php?browser=chrome">Chrome</a>,
+                <a href="https://www.tampermonkey.net/index.php?browser=edge">Microsoft Edge</a>,
+                <a href="https://www.tampermonkey.net/index.php?browser=safari">Safari</a>,
+                <a href="https://www.tampermonkey.net/index.php?browser=opera">Opera Next</a>, and
+                <a href="https://www.tampermonkey.net/index.php?browser=firefox">Firefox</a>.
+              </li>
+              <li>
+                <strong>Install the latest userscript.</strong>
+                Tampermonkey works using userscripts. Open the
+                <a
+                  href="https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js"
+                >
+                  FSE Tools release
+                </a>
+                and confirm the prompt.
+              </li>
+              <li>
+                <strong>Open FSEconomy.</strong>
+                Visit <code>https://server.fseconomy.net/</code>, sign in, and confirm FSE Tools is visible.
+              </li>
+            </ol>
+
+            <aside class="install-card">
+              <h3>Already have Tampermonkey installed?</h3>
+              <p>Click the button below to install the script directly.</p>
+              <a
+                class="button button--tertiary"
+                href="https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js"
+              >
+                Direct install URL
+              </a>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section section--compact">
+          <div class="section-heading">
+            <p class="eyebrow">Open project</p>
+            <h2>FSE Tools stays transparant.</h2>
+          </div>
+          <p>
+            I built this project as an FSEconomy user who wanted better tools for the parts of the site I use most. It
+            is an unofficial project with no affiliation to FSEconomy. If you want to inspect how it works, browse the
+            repository. If something is broken or unclear, report it there.
+          </p>
+          <div class="link-grid">
+            <a class="link-tile" href="https://github.com/thrustvectorlabs/fseconomy-tools">
+              <span class="link-tile__eyebrow">Code</span>
+              <strong>Browse the repository</strong>
+              <span>See the userscript, source, and release workflow.</span>
+            </a>
+            <a class="link-tile" href="https://github.com/thrustvectorlabs/fseconomy-tools/releases">
+              <span class="link-tile__eyebrow">Shipping</span>
+              <strong>Review published releases</strong>
+              <span>Track versions and installable assets.</span>
+            </a>
+            <a class="link-tile" href="https://github.com/thrustvectorlabs/fseconomy-tools/issues">
+              <span class="link-tile__eyebrow">Feedback</span>
+              <strong>Report issues on GitHub</strong>
+              <span>Use the issue tracker for bugs, questions, and requests.</span>
+            </a>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

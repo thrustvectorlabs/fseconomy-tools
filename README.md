@@ -8,6 +8,15 @@ FSEconomy Tools (FSET) - unofficial enhancements for FSEconomy (server.fseconomy
   `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
 - Load FSE Homepage and confirm the FSE Tools menu appears on the right.
 
+# GitHub Pages landing page
+
+- The repo now includes a standalone landing page in `docs/`.
+- Enable GitHub Pages in the repository settings and publish from the `main` branch, `/docs` folder.
+- The landing page should stay focused on user-facing information:
+  what FSET is, why someone would use it, and how to install it.
+- Keep the actual script distribution on GitHub Releases:
+  `https://github.com/thrustvectorlabs/fseconomy-tools/releases/latest/download/fseconomy-tools.user.js`
+
 # Local development
 
 - Set up the project:

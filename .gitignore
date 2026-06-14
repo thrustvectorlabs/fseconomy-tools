@@ -1,4 +1,5 @@
 node_modules
+.DS_Store
 
 # Keep pnpm as the canonical package manager
 yarn.lock
